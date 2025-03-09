@@ -3,7 +3,7 @@ export const handler = async (req) => {
     try {
         const url = 'https://lethabomaepa.netlify.app/api/getPortfolio';
 
-        const response = await fetch(url);
+        const response = await fetch(url, { method: "GET" });
         const res = await response.json();
         if (!res.success) throw new Error("Keep-alive failed");
       
