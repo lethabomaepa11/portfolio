@@ -3,7 +3,7 @@
 
 	import { User, Award, Briefcase, Download } from 'lucide-svelte';
 	import { slide } from 'svelte/transition';
-
+	let { pageData } = $props();
 	let stats = $state([
 		{ icon: Award, value: '5+', label: 'Years Experience' },
 		{ icon: Briefcase, value: '50+', label: 'Projects Completed' },
@@ -21,9 +21,7 @@
 			<div>
 				<h2 class="mb-6 text-3xl font-bold text-gray-900 dark:text-white">About Me</h2>
 				<p class="mb-8 leading-relaxed text-gray-600 dark:text-gray-300">
-					Passionate full-stack developer with expertise in modern web technologies. I specialize in
-					creating performant, scalable applications with intuitive UX. When I'm not coding, you'll
-					find me contributing to open-source projects or exploring new technologies.
+					{pageData.info.about}
 				</p>
 
 				<div class="mb-8 grid grid-cols-3 gap-4">
@@ -36,7 +34,7 @@
 					{/each}
 				</div>
 
-				<Button class="w-full md:w-auto">
+				<Button target="_blank" href={pageData.info.resume} class="w-full md:w-auto">
 					<Download class="mr-2" /> Download Resume
 				</Button>
 			</div>

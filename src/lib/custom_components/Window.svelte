@@ -9,7 +9,7 @@
 	import { onMount } from 'svelte';
 	import { fade, slide } from 'svelte/transition';
 
-	let { page } = $props();
+	let { page, pageData } = $props();
 	let reactivePage = $state(page);
 	let targetEl = $state();
 	let triggerEl = $state();
@@ -113,7 +113,7 @@
 	<div class="h-[80svh] w-full overflow-auto px-3 py-2">
 		{#each pages as thisPage}
 			{#if thisPage.title === page.title}
-				<thisPage.children />
+				<thisPage.children {pageData}/>
 			{/if}
 		{/each}
 	</div>

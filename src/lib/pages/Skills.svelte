@@ -2,12 +2,12 @@
 	import { Code, Database, Cloud, Brush, Rocket } from 'lucide-svelte';
 	import { fade, slide } from 'svelte/transition';
 
+	let { pageData } = $props();
 	let skills = $state([
-		{ name: 'Frontend', icon: Code, level: 90, tools: 'React, Svelte, Vue' },
-		{ name: 'Backend', icon: Database, level: 85, tools: 'Node.js, Python, SQL' },
-		{ name: 'Cloud', icon: Cloud, level: 80, tools: 'AWS, Docker, Kubernetes' },
-		{ name: 'UI/UX', icon: Brush, level: 88, tools: 'Figma, Adobe XD, Framer' },
-		{ name: 'DevOps', icon: Rocket, level: 83, tools: 'CI/CD, Terraform, Ansible' }
+		{ name: 'Frontend', icon: Code, level: 90, tools: 'React, Svelte, HTML/CSS' },
+		{ name: 'Backend', icon: Database, level: 85, tools: 'Node.js, C# .NET, SQL, Supabase' },
+		{ name: 'Database', icon: Cloud, level: 80, tools: 'PostgreSQL, Microsoft SQL Server, Oracle' },
+		{ name: 'UI/UX', icon: Brush, level: 88, tools: 'Figma, Canva' },
 	]);
 </script>
 

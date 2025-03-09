@@ -9,7 +9,8 @@
 		HelpingHand,
 		House,
 		Menu,
-		User
+		User,
+X
 	} from 'lucide-svelte';
 	import '../app.css';
 	import { ModeWatcher } from 'mode-watcher';
@@ -20,10 +21,10 @@
 	import Window from '$lib/custom_components/Window.svelte';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import { onMount } from 'svelte';
-	import { slide } from 'svelte/transition';
+	import { fly, slide } from 'svelte/transition';
 	import Loading from '$lib/custom_components/Loading.svelte';
 
-	let { children } = $props();
+	let { children,data } = $props();
 	let isLoading = $state(true);
 	const taskBarItems = [
 		{
@@ -66,11 +67,12 @@
 	}, 1000);
 	let mobile = $state(new IsMobile());
 	let isMobile = $state(mobile.current);
-
+	let showSidebar = $state(!isMobile);
 	onMount(() => {
 		window.addEventListener('resize', () => {
 			mobile = new IsMobile();
 			isMobile = mobile.current;
+			showSidebar = !isMobile;
 		});
 		isLoading = false;
 	});
@@ -78,21 +80,29 @@
 
 <ModeWatcher />
 {#if isLoading}
+	<title>Loading...</title>
 	<Loading />
 {:else}
 	<main class="flex items-center justify-center">
-		{#if !isMobile}
-			<div class="h-[92svh] min-w-[13svw]">
-				<Sidebar />
+		{#if showSidebar}
+			<div transition:fly class="h-[92svh] min-w-[13svw] {isMobile ? 'fixed bg-background/95 left-0 h-screen w-[40svw] top-0 z-50' : ''}">
+				{#if isMobile}
+					<h2 class="text-xl font-bold text-blue-400 p-1 flex justify-between items-center w-full">Menu
+						<Button variant="ghost" size="icon" onclick={() => showSidebar = false}><X /></Button>
+					</h2>
+				{/if}
+				<Sidebar {isMobile} />
 			</div>
 		{:else}
 			<header
+			transition:slide={{ delay: 150, duration: 500, direction: 'right' }}
+
 				class="fixed top-0 z-50 flex h-14 w-full items-center justify-between border bg-background/95 p-3 bg-blend-overlay"
 			>
 				<a href="/" class="  text-xl font-bold text-blue-400"><h1>Lethabo Maepa</h1></a>
-				<span>
+				<span class="space-x-4">
 					<ModeToggle />
-					<Button><Menu /></Button>
+					<Button onclick={() => showSidebar = true}><Menu /></Button>
 				</span>
 			</header>
 		{/if}
@@ -143,7 +153,7 @@
 							: ''}   justify-center rounded-lg  transition-all {item.class ?? ''}"
 						size="icon"><item.icon /></Button
 					>
-					<Window page={item} />
+					<Window pageData={data.data} page={item} />
 					<div
 						id="tooltip-{item.url}"
 						role="tooltip"

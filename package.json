@@ -41,6 +41,9 @@
 		"vite": "^6.0.0"
 	},
 	"dependencies": {
+		"@netlify/functions": "^3.0.1",
+		"@supabase/ssr": "^0.5.2",
+		"@supabase/supabase-js": "^2.49.1",
 		"mode-watcher": "^0.5.1",
 		"moment": "^2.30.1"
 	}

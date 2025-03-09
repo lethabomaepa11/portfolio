@@ -1,36 +1,7 @@
 <script>
 	import { fade, slide } from 'svelte/transition';
-
-	let projects = [
-		{
-			title: 'Varsity Mate',
-			description:
-				'A campus social networking app for students with study groups, career center, and goal tracking.',
-			github: 'https://github.com/yourusername/varsity-mate',
-			demo: 'https://varsitymate.app'
-		},
-		{
-			title: 'Smart Grocery Planner',
-			description:
-				'AI-powered tool that helps users budget and track grocery expenses in real-time.',
-			github: 'https://github.com/yourusername/grocery-planner',
-			demo: 'https://groceryplanner.app'
-		},
-		{
-			title: 'Taxi Tracker',
-			description:
-				'Uber-like app for public transport, showing real-time taxi availability and routes.',
-			github: 'https://github.com/yourusername/taxi-tracker',
-			demo: 'https://taxitracker.app'
-		},
-		{
-			title: 'Freelancer Hub',
-			description:
-				'A platform for freelancers to find work and clients to hire skilled professionals.',
-			github: 'https://github.com/yourusername/freelancer-hub',
-			demo: 'https://freelancerhub.app'
-		}
-	];
+	let { pageData } = $props();
+	console.log(pageData);
 </script>
 
 <div
@@ -42,24 +13,30 @@
 	<p class="mt-3 text-center text-lg text-gray-300">Check out some of my best work below.</p>
 
 	<div class="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-		{#each projects as project}
+		{#each pageData.projects as project}
 			<div
 				class="rounded-xl bg-gray-800 p-6 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl"
 			>
-				<img src="/favicon.png" alt={project.title} class="mx-auto mb-4 h-16 w-16 opacity-80" />
-				<h2 class="text-center text-2xl font-semibold text-white">{project.title}</h2>
-				<p class="mt-2 text-center text-gray-400">{project.description}</p>
+				<img src={project.image} alt={project.title} class="mx-auto mb-4 h-48 w-full opacity-80 rounded-lg" />
+				<h2 class="text-2xl font-semibold text-white">{project.title}</h2>
+				<p class="mt-2  text-gray-400 max-w-full break-words line-clamp-3">
+					{project.description}
+				  </p>				<span class="mt-2 text-center text-gray-400 space-x-2">{#each project.technologies as tech}
+					<span class="inline-block rounded-2xl text-xs bg-gray-700 px-2 py-1">{tech}</span>
+				{/each}</span>
 				<div class="mt-6 flex justify-between">
 					<a
-						href={project.github}
+						href={project.githubUrl}
 						class="text-lg font-medium text-blue-400 transition hover:text-blue-300"
 						target="_blank">GitHub</a
 					>
+					{#if project.demoUrl}
 					<a
-						href={project.demo}
+						href={project.demoUrl}
 						class="rounded-lg bg-blue-500 px-5 py-2 text-lg font-bold text-white shadow-lg transition hover:bg-blue-600"
 						target="_blank">Live Demo</a
 					>
+					{/if}
 				</div>
 			</div>
 		{/each}

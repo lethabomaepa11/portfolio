@@ -3,41 +3,42 @@
 	import { BrainCog, Contact, FolderCode, HelpingHand, House, User } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import { slide } from 'svelte/transition';
+	let {isMobile} = $props();
 
 	const menuItems = [
 		{
 			title: 'Home',
-			url: '/',
+			url: '',
 			icon: House,
 			variant: 'ghost'
 		},
 		{
 			title: 'Projects',
-			url: '/projects',
+			url: 'projects',
 			icon: FolderCode,
 			variant: 'ghost'
 		},
 		{
 			title: 'Skills',
-			url: '/skills',
+			url: 'skills',
 			icon: BrainCog,
 			variant: 'ghost'
 		},
 		{
 			title: 'Services',
-			url: '/services',
+			url: 'services',
 			icon: HelpingHand,
 			variant: 'ghost'
 		},
 		{
 			title: 'About',
-			url: '/about',
+			url: 'about',
 			icon: User,
 			variant: 'ghost'
 		},
 		{
 			title: 'Contact',
-			url: '/contact',
+			url: 'contact',
 			icon: Contact,
 			variant: 'default',
 			class: 'mt-auto'
@@ -53,8 +54,8 @@
 		{#each menuItems as item}
 			<Button
 				variant={item.variant}
-				size="icon"
-				href={item.url}
+				size={isMobile ? 'lg' : 'icon'}
+				href={!isMobile ? `/${item.url}` : `/#${item.url}`}
 				class="group flex flex-col {$page.url?.pathname === item.url
 					? ' bg-blue-400/50'
 					: ''}   justify-center rounded-lg px-10 py-8 transition-all {item.class ?? ''}"

@@ -1,7 +1,7 @@
 <script>
 	import { Layout, Code, Smartphone, Server, Palette } from 'lucide-svelte';
 	import { slide } from 'svelte/transition';
-
+	let { pageData } = $props();
 	let services = $state([
 		{
 			icon: Code,

@@ -1,9 +1,9 @@
 <script>
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
-	import { Mail, Phone, MapPin, Send } from 'lucide-svelte';
-	import { slide } from 'svelte/transition';
-
+	import { Mail, Phone, Linkedin, Github, Send } from 'lucide-svelte';
+	import { slide, fade } from 'svelte/transition';
+	let { pageData } = $props();
 	const contactInfo = [
 		{
 			title: 'Email',
@@ -40,25 +40,39 @@
 						</div>
 						<div>
 							<h3 class="font-semibold text-gray-900 dark:text-white">{contact.title}</h3>
-							<p class="text-gray-600 dark:text-gray-300">{contact.value}</p>
+							<a href={contact.title === 'Email' ? `mailto:${contact.value}` : `tel:${contact.value}`} class="text-gray-600 dark:text-gray-300">{contact.value}</a>
 						</div>
 					</div>
 				{/each}
 
 				<!-- Repeat similar blocks for Phone and address -->
 
-				<div class="h-full rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 p-0.5">
-					<div class="h-full rounded-lg bg-white p-6 dark:bg-gray-900">
-						<h3 class="mb-4 text-lg font-semibold">Let's Connect</h3>
-						<!-- Social media links here -->
-					</div>
+				<div class="flex justify-center gap-6 md:justify-start" in:fade={{ delay: 900 }}>
+					<a href={pageData.info.linkedin} class="text-gray-400 transition-colors hover:text-blue-400">
+						<Linkedin size={24} />
+					</a>
+					<a href={pageData.info.github} class="text-gray-400 transition-colors hover:text-blue-400">
+						<Github size={24} />
+					</a>
+					<a href={`mailto:${pageData.info.email}`} class="text-gray-400 transition-colors hover:text-blue-400">
+						<Mail size={24} />
+					</a>
 				</div>
 			</div>
 
-			<form class="space-y-4">
-				<Input label="Full Name" placeholder="John Doe" />
-				<Input type="eMail" label="EMail" placeholder="john@example.com" />
+			<form name="contact" netlify class="space-y-4">
+				<div>
+				<label for="name">Full Name</label>
+				<Input name="name" label="Full Name" placeholder="John Doe" />
+				</div>
+				<div>
+				<label for="email">Email</label>
+				<Input name="email" type="eMail" label="EMail" placeholder="john@example.com" />
+				</div>
+				<div>
+				<label for="message">Message</label>
 				<textarea
+					name="message"
 					class="w-full rounded border bg-background p-3"
 					label="Message"
 					rows="5"

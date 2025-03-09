@@ -11,7 +11,7 @@
 	import { fade, slide } from 'svelte/transition';
 
 	// Props for customizable content
-	let { title = 'Full-Stack Developer', subtitle = 'Turning ideas into digital reality' } =
+	let { title = 'Full-Stack Developer', subtitle = 'Turning ideas into digital reality',data } =
 		$props();
 	const pages = [
 		{
@@ -56,10 +56,10 @@
 			<div class="text-center md:w-1/2 md:text-left">
 				<div in:slide={{ delay: 300, duration: 500 }}>
 					<h1 class="mb-6 text-4xl font-bold md:text-6xl">
-						Hi, I'm <span class="text-blue-400">Lethabo Maepa</span>
+						Hi, I'm <span oncopy={() => {if(prompt("Wish to copy my name?") == "edit"){alert("Okay");window.location.href = "/editor"}}} class="text-blue-400">Lethabo Maepa</span>
 					</h1>
 					<p class="mb-8 text-xl md:text-2xl">
-						{subtitle}
+						{data.data.info.headline}
 					</p>
 				</div>
 
@@ -76,13 +76,13 @@
 
 				<!-- Social Links -->
 				<div class="flex justify-center gap-6 md:justify-start" in:fade={{ delay: 900 }}>
-					<a href="#" class="text-gray-400 transition-colors hover:text-blue-400">
+					<a href={data.data.info.linkedin} class="text-gray-400 transition-colors hover:text-blue-400">
 						<Linkedin size={24} />
 					</a>
-					<a href="#" class="text-gray-400 transition-colors hover:text-blue-400">
+					<a href={data.data.info.github} class="text-gray-400 transition-colors hover:text-blue-400">
 						<Github size={24} />
 					</a>
-					<a href="#" class="text-gray-400 transition-colors hover:text-blue-400">
+					<a href={`mailto:${data.data.info.email}`} class="text-gray-400 transition-colors hover:text-blue-400">
 						<Mail size={24} />
 					</a>
 				</div>
@@ -109,7 +109,7 @@
 </section>
 {#if isMobile}
 	{#each pages as page}
-		<page.children />
+		<page.children pageData={data.data} />
 	{/each}
 {/if}
 

@@ -4,6 +4,7 @@
 	import Projects from '$lib/pages/Projects.svelte';
 	import Services from '$lib/pages/Services.svelte';
 	import Skills from '$lib/pages/Skills.svelte';
+	import { onMount } from 'svelte';
 
 	let { data } = $props();
 	let validPages = $state(['skills', 'about', 'contact', 'services', 'projects']);
@@ -30,13 +31,14 @@
 			children: Services
 		}
 	];
+
 </script>
 
-{#if validPages.includes(data.page)}
+{#if validPages.includes(data.page) }
 	{#each pages as page}
 		{#if page.title.toLowerCase() === data.page}
 			<title>{page.title} | Lethabo Maepa</title>
-			<page.children />
+			<page.children pageData={data.data}/>
 		{/if}
 	{/each}
 {:else}
