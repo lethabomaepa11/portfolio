@@ -30,7 +30,7 @@
 						class="text-lg font-medium text-blue-400 transition hover:text-blue-300"
 						target="_blank">GitHub</a
 					>
-					{#if project.demoUrl}
+					{#if project.demoUrl != undefined && project.demoUrl != ""}
 					<a
 						href={project.demoUrl}
 						class="rounded-lg bg-blue-500 px-5 py-2 text-lg font-bold text-white shadow-lg transition hover:bg-blue-600"
