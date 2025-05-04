@@ -39,6 +39,8 @@
 	});
 	const handleSubmit = async () => {
 		statuses.loading = true;
+		statuses.success = false;
+		statuses.error = false;
 		if (form.name && form.email && form.message) {
 			let forMe = form;
 			let message = form.message;
