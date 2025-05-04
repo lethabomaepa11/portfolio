@@ -1,24 +1,61 @@
 <script>
-	import { slide } from 'svelte/transition';
+	import { page } from '$app/state';
 </script>
 
-<div class="flex min-h-screen w-screen flex-col items-center justify-center">
-	<h1 class="text-4xl text-blue-400">Lethabo Maepa</h1>
-	<div
-		class="mt-12 animate-pulse md:mt-0 md:w-1/2"
-		in:slide={{ delay: 300, duration: 500, direction: 'right' }}
-	>
-		<div class="group relative">
-			<div
-				class="absolute -inset-2 rounded-full bg-blue-400/30 blur-lg transition-opacity group-hover:opacity-75"
-			></div>
-			<img
-				src="/coder.png"
-				alt="Lethabo Maepa"
-				class="relative mx-auto w-full max-w-md transform rounded-2xl transition-transform group-hover:-translate-y-2"
-			/>
-		</div>
+<main
+	class="flex {page.url.pathname === '/editor'
+		? 'h-full w-full'
+		: 'h-screen w-screen'} flex-col items-center justify-center gap-3"
+>
+	<div class="loading-wave">
+		<div class="loading-bar"></div>
+		<div class="loading-bar"></div>
+		<div class="loading-bar"></div>
+		<div class="loading-bar"></div>
 	</div>
+</main>
 
-	<p class="animate-bounce text-xl font-bold">Loading...</p>
-</div>
+<style>
+	.loading-wave {
+		width: 300px;
+		height: 100px;
+		display: flex;
+		justify-content: center;
+		align-items: flex-end;
+	}
+
+	.loading-bar {
+		width: 20px;
+		height: 10px;
+		margin: 0 5px;
+		background-color: #3498db;
+		border-radius: 5px;
+		animation: loading-wave-animation 1s ease-in-out infinite;
+	}
+
+	.loading-bar:nth-child(2) {
+		animation-delay: 0.1s;
+	}
+
+	.loading-bar:nth-child(3) {
+		animation-delay: 0.2s;
+	}
+
+	.loading-bar:nth-child(4) {
+		animation-delay: 0.3s;
+	}
+
+	@keyframes loading-wave-animation {
+		0% {
+			height: 10px;
+		}
+
+		50% {
+			height: 50px;
+		}
+
+		100% {
+			height: 10px;
+		}
+	}
+</style>

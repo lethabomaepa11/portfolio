@@ -6,13 +6,16 @@
 	import Projects from '$lib/pages/Projects.svelte';
 	import Services from '$lib/pages/Services.svelte';
 	import Skills from '$lib/pages/Skills.svelte';
-	import { Linkedin, Github, Mail, Download } from 'lucide-svelte';
+	import { Linkedin, Github, Mail, Download, Youtube } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { fade, slide } from 'svelte/transition';
 
 	// Props for customizable content
-	let { title = 'Full-Stack Developer', subtitle = 'Turning ideas into digital reality',data } =
-		$props();
+	let {
+		title = 'Full-Stack Developer',
+		subtitle = 'Turning ideas into digital reality',
+		data
+	} = $props();
 	const pages = [
 		{
 			title: 'About',
@@ -47,7 +50,10 @@
 	});
 </script>
 
-<title>Home | Lethabo Maepa</title>
+<svelte:head>
+	<title>Lethabo Maepa</title>
+	<meta name="description" content={data.data.info.headline} />
+</svelte:head>
 
 <section class="bg-gradient-to-b from-gray-900 to-gray-800 px-4 py-10 md:py-10">
 	<div class="container mx-auto max-w-6xl">
@@ -56,7 +62,15 @@
 			<div class="text-center md:w-1/2 md:text-left">
 				<div in:slide={{ delay: 300, duration: 500 }}>
 					<h1 class="mb-6 text-4xl font-bold md:text-6xl">
-						Hi, I'm <span oncopy={() => {if(prompt("Wish to copy my name?") == "edit"){alert("Okay");window.location.href = "/editor"}}} class="text-blue-400">Lethabo Maepa</span>
+						Hey, I'm <span
+							oncopy={() => {
+								if (prompt('Wish to copy my name?') == 'edit') {
+									alert('Okay');
+									window.location.href = '/editor';
+								}
+							}}
+							class="text-blue-400">Lethabo Maepa</span
+						>
 					</h1>
 					<p class="mb-8 text-xl md:text-2xl">
 						{data.data.info.headline}
@@ -65,25 +79,44 @@
 
 				<!-- Call to Action Buttons -->
 				<div class="mb-12 flex justify-center gap-4 md:justify-start" in:fade={{ delay: 600 }}>
-					<Button color="alternative" class="group" href="#projects">
+					<Button color="alternative" class="group" href={isMobile ? '#projects' : '/projects'}>
 						View Work
 						<span class="ml-2 transition-transform group-hover:translate-x-1">
 							<Download size={20} />
 						</span>
 					</Button>
-					<Button color="blue" href="#contact">Get in Touch</Button>
+					<Button color="blue" href={isMobile ? '#contact' : '/contact'}>Get in Touch</Button>
 				</div>
 
 				<!-- Social Links -->
 				<div class="flex justify-center gap-6 md:justify-start" in:fade={{ delay: 900 }}>
-					<a href={data.data.info.linkedin} class="text-gray-400 transition-colors hover:text-blue-400">
+					<a
+						href={data.data.info.linkedin}
+						target="_blank"
+						class="text-gray-400 transition-colors hover:text-blue-400"
+					>
 						<Linkedin size={24} />
 					</a>
-					<a href={data.data.info.github} class="text-gray-400 transition-colors hover:text-blue-400">
+					<a
+						href={data.data.info.github}
+						target="_blank"
+						class="text-gray-400 transition-colors hover:text-blue-400"
+					>
 						<Github size={24} />
 					</a>
-					<a href={`mailto:${data.data.info.email}`} class="text-gray-400 transition-colors hover:text-blue-400">
+					<a
+						href={`mailto:${data.data.info.email}`}
+						target="_blank"
+						class="text-gray-400 transition-colors hover:text-blue-400"
+					>
 						<Mail size={24} />
+					</a>
+					<a
+						href="https://www.youtube.com/@devlethabo"
+						target="_blank"
+						class="text-gray-400 transition-colors hover:text-blue-400"
+					>
+						<Youtube size={24} />
 					</a>
 				</div>
 			</div>

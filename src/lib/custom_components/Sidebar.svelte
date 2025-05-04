@@ -3,7 +3,7 @@
 	import { BrainCog, Contact, FolderCode, HelpingHand, House, User } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import { slide } from 'svelte/transition';
-	let {isMobile} = $props();
+	let { isMobile } = $props();
 
 	const menuItems = [
 		{
@@ -40,8 +40,7 @@
 			title: 'Contact',
 			url: 'contact',
 			icon: Contact,
-			variant: 'default',
-			class: 'mt-auto'
+			variant: 'ghost'
 		}
 	];
 </script>

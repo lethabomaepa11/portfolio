@@ -1,7 +1,17 @@
 <script>
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
-	import { Mail, Phone, Linkedin, Github, Send } from 'lucide-svelte';
+	import Loading from '$lib/custom_components/Loading.svelte';
+
+	import {
+		Mail,
+		Phone,
+		Linkedin,
+		Github,
+		Send,
+		CheckCheckIcon,
+		AlertTriangle
+	} from 'lucide-svelte';
 	import { slide, fade } from 'svelte/transition';
 	let { pageData } = $props();
 	const contactInfo = [
@@ -16,6 +26,65 @@
 			icon: Phone
 		}
 	];
+	let form = $state({
+		name: '',
+		email: '',
+		message: '',
+		subject: 'Thank you for reaching out'
+	});
+	let statuses = $state({
+		loading: false,
+		success: false,
+		error: false
+	});
+	const handleSubmit = async () => {
+		statuses.loading = true;
+		if (form.name && form.email && form.message) {
+			let forMe = form;
+			let message = form.message;
+			//send email to the person who sent the message
+			form.message =
+				"Your message has been received: <br/><div class='message'>" + form.message + '</div>';
+			form.message +=
+				'<br/><br/>Thank you for reaching out, I will get back to you as soon as possible<br/><br/>Best regards,<br/>Lethabo Maepa';
+			let res = await fetch('/api/contact/message', {
+				method: 'POST',
+				body: JSON.stringify({ data: form })
+			});
+			let r = await res.json();
+			if (r.success) {
+				//send an email to myself
+				forMe.message =
+					'You have a new message from ' +
+					forMe.name +
+					': ' +
+					forMe.email +
+					' with the following message: <br/><div class="message">' +
+					message +
+					'</div>';
+				forMe.subject = 'New message from ' + forMe.name;
+				forMe.name = 'Lethabo Maepa';
+				forMe.email = 'lethabomaepa11@gmail.com';
+				let res = await fetch('/api/contact/message', {
+					method: 'POST',
+					body: JSON.stringify({ data: form })
+				});
+				let r = await res.json();
+				if (r.success) {
+					form = {
+						name: '',
+						email: '',
+						message: '',
+						subject: 'Thank you for reaching out'
+					};
+					statuses.success = true;
+				}
+			}
+		} else {
+			statuses.error = true;
+		}
+		statuses.loading = false;
+	};
 </script>
 
 <section
@@ -40,7 +109,12 @@
 						</div>
 						<div>
 							<h3 class="font-semibold text-gray-900 dark:text-white">{contact.title}</h3>
-							<a href={contact.title === 'Email' ? `mailto:${contact.value}` : `tel:${contact.value}`} class="text-gray-600 dark:text-gray-300">{contact.value}</a>
+							<a
+								href={contact.title === 'Email'
+									? `mailto:${contact.value}`
+									: `tel:${contact.value}`}
+								class="text-gray-600 dark:text-gray-300">{contact.value}</a
+							>
 						</div>
 					</div>
 				{/each}
@@ -48,39 +122,74 @@
 				<!-- Repeat similar blocks for Phone and address -->
 
 				<div class="flex justify-center gap-6 md:justify-start" in:fade={{ delay: 900 }}>
-					<a href={pageData.info.linkedin} class="text-gray-400 transition-colors hover:text-blue-400">
+					<a
+						href={pageData.info.linkedin}
+						class="text-gray-400 transition-colors hover:text-blue-400"
+					>
 						<Linkedin size={24} />
 					</a>
-					<a href={pageData.info.github} class="text-gray-400 transition-colors hover:text-blue-400">
+					<a
+						href={pageData.info.github}
+						class="text-gray-400 transition-colors hover:text-blue-400"
+					>
 						<Github size={24} />
 					</a>
-					<a href={`mailto:${pageData.info.email}`} class="text-gray-400 transition-colors hover:text-blue-400">
+					<a
+						href={`mailto:${pageData.info.email}`}
+						class="text-gray-400 transition-colors hover:text-blue-400"
+					>
 						<Mail size={24} />
 					</a>
 				</div>
 			</div>
 
-			<form name="contact" netlify class="space-y-4">
-				<div>
-				<label for="name">Full Name</label>
-				<Input name="name" label="Full Name" placeholder="John Doe" />
-				</div>
-				<div>
-				<label for="email">Email</label>
-				<Input name="email" type="eMail" label="EMail" placeholder="john@example.com" />
-				</div>
-				<div>
-				<label for="message">Message</label>
-				<textarea
-					name="message"
-					class="w-full rounded border bg-background p-3"
-					label="Message"
-					rows="5"
-					placeholder="Your message..."
-				></textarea>
-				<Button color="blue" type="submit" class="w-full">
-					<Send class="mr-2" /> Send Message
-				</Button>
+			<form
+				name="contact"
+				onsubmit={handleSubmit}
+				class="space-y-4 rounded-lg border bg-background/80 p-5 shadow-xl backdrop-blur"
+			>
+				{#if statuses.loading}
+					<Loading />
+				{:else}
+					{#if statuses.success}
+						<span class="flex items-center justify-between rounded bg-green-300/50 p-2">
+							Your message was sent successfully <CheckCheckIcon />
+						</span>
+					{/if}
+					{#if statuses.error}
+						<span class="flex items-center justify-between rounded bg-red-300/50 p-2">
+							Something went wrong! <AlertTriangle />
+						</span>
+					{/if}
+					<div>
+						<label for="name">Full Name</label>
+						<Input bind:value={form.name} name="name" label="Full Name" placeholder="John Doe" />
+					</div>
+					<div>
+						<label for="email">Email</label>
+						<Input
+							bind:value={form.email}
+							name="email"
+							type="email"
+							label="EMail"
+							placeholder="john@example.com"
+						/>
+					</div>
+					<div>
+						<label for="message">Message</label>
+						<textarea
+							bind:value={form.message}
+							name="message"
+							class="w-full rounded border bg-background p-3"
+							label="Message"
+							rows="5"
+							placeholder="Your message..."
+						></textarea>
+						<Button color="blue" type="submit" class="w-full">
+							<Send class="mr-2" /> Send Message
+						</Button>
+					</div>
+				{/if}
 			</form>
 		</div>
 	</div>

@@ -3,6 +3,8 @@
 	import Sidebar from '$lib/custom_components/Sidebar.svelte';
 	import {
 		AppWindow,
+		ArrowDown,
+		ArrowUp,
 		BrainCog,
 		Contact,
 		FolderCode,
@@ -10,7 +12,7 @@
 		House,
 		Menu,
 		User,
-X
+		X
 	} from 'lucide-svelte';
 	import '../app.css';
 	import { ModeWatcher } from 'mode-watcher';
@@ -24,9 +26,14 @@ X
 	import { fly, slide } from 'svelte/transition';
 	import Loading from '$lib/custom_components/Loading.svelte';
 
-	let { children,data } = $props();
+	let { children, data } = $props();
 	let isLoading = $state(true);
 	const taskBarItems = [
+		{
+			title: 'Home',
+			url: '/',
+			icon: House
+		},
 		{
 			title: 'Projects',
 			url: '/projects',
@@ -68,14 +75,24 @@ X
 	let mobile = $state(new IsMobile());
 	let isMobile = $state(mobile.current);
 	let showSidebar = $state(!isMobile);
+	let navBarAtTop = $state(true);
 	onMount(() => {
 		window.addEventListener('resize', () => {
 			mobile = new IsMobile();
 			isMobile = mobile.current;
 			showSidebar = !isMobile;
 		});
+		let localNb = localStorage.getItem('navBarAtTop');
+		if (localNb) {
+			navBarAtTop = localNb === 'true';
+		}
 		isLoading = false;
 	});
+
+	const toggleNavBarAtTop = () => {
+		navBarAtTop = !navBarAtTop;
+		localStorage.setItem('navBarAtTop', navBarAtTop);
+	};
 </script>
 
 <ModeWatcher />
@@ -85,74 +102,65 @@ X
 {:else}
 	<main class="flex items-center justify-center">
 		{#if showSidebar}
-			<div transition:fly class="h-[92svh] min-w-[13svw] {isMobile ? 'fixed bg-background/95 left-0 h-screen w-[40svw] top-0 z-50' : ''}">
+			<div
+				transition:fly
+				class="{navBarAtTop && !isMobile ? 'top-14' : 'h-[92svh]'} min-w-[13svw] {isMobile
+					? 'fixed left-0 top-0 z-50 h-screen w-[40svw] bg-background/95'
+					: ''}"
+			>
 				{#if isMobile}
-					<h2 class="text-xl font-bold text-blue-400 p-1 flex justify-between items-center w-full">Menu
-						<Button variant="ghost" size="icon" onclick={() => showSidebar = false}><X /></Button>
+					<h2 class="flex w-full items-center justify-between p-1 text-xl font-bold text-blue-400">
+						Menu
+						<Button variant="ghost" size="icon" onclick={() => (showSidebar = false)}><X /></Button>
 					</h2>
 				{/if}
 				<Sidebar {isMobile} />
 			</div>
 		{:else}
 			<header
-			transition:slide={{ delay: 150, duration: 500, direction: 'right' }}
-
+				transition:slide={{ delay: 150, duration: 500, direction: 'right' }}
 				class="fixed top-0 z-50 flex h-14 w-full items-center justify-between border bg-background/95 p-3 bg-blend-overlay"
 			>
 				<a href="/" class="  text-xl font-bold text-blue-400"><h1>Lethabo Maepa</h1></a>
 				<span class="space-x-4">
 					<ModeToggle />
-					<Button onclick={() => showSidebar = true}><Menu /></Button>
+					<Button onclick={() => (showSidebar = true)}><Menu /></Button>
 				</span>
 			</header>
 		{/if}
 		<div
-			class="h-screen w-screen py-20 md:h-[91svh] md:w-[85svw] md:overflow-auto md:rounded-lg md:shadow-2xl lg:p-5"
+			class="h-screen w-screen py-20 {navBarAtTop
+				? 'md:h-[100svh]'
+				: 'md:h-[91-svh]'} md:w-[85svw] md:overflow-auto md:rounded-lg md:shadow-2xl lg:p-5"
 		>
 			{@render children()}
 		</div>
 	</main>
 	{#if !isMobile}
-		<footer
+		<section
 			transition:slide={{ delay: 300, duration: 500, direction: 'right' }}
-			class="fixed bottom-0 z-50 flex h-[8svh] w-screen items-center justify-between gap-3 border bg-background p-3"
+			class="fixed {navBarAtTop
+				? 'top-0'
+				: 'bottom-0'} bottom-0 left-0 right-0 z-50 flex h-[8svh] w-screen items-center justify-between gap-3 border bg-background/80 p-3 backdrop-blur-sm"
 		>
 			<div id="left" class="flex items-center gap-3">
 				<ModeToggle />
 				<a href="/" class="  text-xl font-bold text-blue-400"><h1>Lethabo Maepa</h1></a>
 			</div>
 			<div id="center" class="flex items-center gap-5">
-				<Button
-					data-tooltip-target="tooltip-menu"
-					type="button"
-					data-popover-target="popover-click"
-					data-popover-trigger="click"
-					variant="outline"
-					size="icon"
-				>
-					<AppWindow />
-				</Button>
-				<div
-					id="tooltip-menu"
-					role="tooltip"
-					class="shadow-xs tooltip invisible absolute z-50 inline-block rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white opacity-0 transition-opacity duration-300 dark:bg-gray-700"
-				>
-					Menu
-					<div class="tooltip-arrow" data-popper-arrow></div>
-				</div>
-				<MenuPopUp />
 				{#each taskBarItems as item}
 					<!--When hovering on an icon, if there's a window open for that icon, display the contents of that window otherwise
 		just show the title of the icon on the tooltip-->
 					<Button
 						id="button-{item.title}"
 						data-tooltip-target="tooltip-{item.url}"
-						variant={$page.url?.pathname === item.url ? 'default' : 'outline'}
+						variant={'ghost'}
 						class="group flex flex-col hover:-translate-y-1 {$page.url?.pathname === item.url
-							? ' bg-blue-400/50'
-							: ''}   justify-center rounded-lg  transition-all {item.class ?? ''}"
-						size="icon"><item.icon /></Button
+							? ' rounded-none border-b border-blue-400 p-5'
+							: ''}   justify-center  transition-all {item.class ?? ''}"
 					>
+						<p class="">{item.title}</p>
+					</Button>
 					<Window pageData={data.data} page={item} />
 					<div
 						id="tooltip-{item.url}"
@@ -165,11 +173,14 @@ X
 				{/each}
 			</div>
 			<div id="right" class="flex items-center gap-5 text-xs">
-				<span class="flex flex-col items-end">
-					<p>{time}</p>
-					<p>{date}</p>
-				</span>
+				<button type="button" onclick={toggleNavBarAtTop}>
+					{#if navBarAtTop}
+						<ArrowDown />
+					{:else}
+						<ArrowUp />
+					{/if}
+				</button>
 			</div>
-		</footer>
+		</section>
 	{/if}
 {/if}

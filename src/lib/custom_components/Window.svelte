@@ -5,9 +5,10 @@
 	import Projects from '$lib/pages/Projects.svelte';
 	import Services from '$lib/pages/Services.svelte';
 	import Skills from '$lib/pages/Skills.svelte';
-	import { Maximize, Minimize2, MinusIcon, X } from 'lucide-svelte';
+	import { ArrowUpRightFromSquare, Maximize, Minimize2, MinusIcon, X } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { fade, slide } from 'svelte/transition';
+	import Page from '../../routes/+page.svelte';
 
 	let { page, pageData } = $props();
 	let reactivePage = $state(page);
@@ -17,6 +18,10 @@
 	let options = $state();
 	let popover = $state({ options: { triggerType: 'hover' } });
 	const pages = [
+		{
+			title: '',
+			children: Page
+		},
 		{
 			title: 'Projects',
 			children: Projects
@@ -88,7 +93,6 @@
 	data-popover
 	id="window-{page.title}"
 	role="tooltip"
-	onHide={() => console.log('nah')}
 	class="min-h[90svh] invisible absolute left-0 inline-block {reactivePage.state == 'max'
 		? 'fixed top-0 z-40 -mt-10'
 		: 'z-10 rounded-lg'} max-h-[{reactivePage.state == 'max'
@@ -107,13 +111,20 @@
 			{:else}
 				<Button variant="ghost" onclick={handleWindowState}><Maximize /></Button>
 			{/if}
+			<Button
+				variant="ghost"
+				href={'/' + page.title.toLowerCase()}
+				onclick={handleClose}
+				title="Visit {page.title} page"
+				class=""><ArrowUpRightFromSquare /></Button
+			>
 			<Button variant="ghost" class="hover:bg-red-600" onclick={handleClose}><X /></Button>
 		</span>
 	</div>
 	<div class="h-[80svh] w-full overflow-auto px-3 py-2">
 		{#each pages as thisPage}
 			{#if thisPage.title === page.title}
-				<thisPage.children {pageData}/>
+				<thisPage.children {pageData} />
 			{/if}
 		{/each}
 	</div>
