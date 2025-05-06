@@ -4,10 +4,12 @@
 
 	let { pageData } = $props();
 	let skills = $state([
-		{ name: 'Frontend', icon: Code, level: 90, tools: 'React, Svelte, HTML/CSS' },
-		{ name: 'Backend', icon: Database, level: 85, tools: 'Node.js, C# .NET, SQL, Supabase' },
+		{ name: 'Frontend', icon: Code, level: 90, tools: 'React, Svelte, Vue.js, HTML/CSS' },
+		{ name: 'Full-Stack', icon: Brush, level: 88, tools: 'NextJs, SvelteKit, Nuxt.js' },
+		{ name: 'Backend', icon: Database, level: 85, tools: 'Node.js, .NET, Supabase, Appwrite' },
 		{ name: 'Database', icon: Cloud, level: 80, tools: 'PostgreSQL, Microsoft SQL Server, Oracle' },
-		{ name: 'UI/UX', icon: Brush, level: 88, tools: 'Figma, Canva' },
+		{ name: 'Languages', icon: Code, tools: 'Javascript, Typescript, Python, C#, Java' },
+		{ name: 'Tools', icon: Rocket, tools: 'Git, GitHub, Docker, Vercel, Netlify' }
 	]);
 </script>
 
