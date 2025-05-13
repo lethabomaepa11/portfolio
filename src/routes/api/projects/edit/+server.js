@@ -37,9 +37,9 @@ export const POST = async ({ request, locals:{ supabase } }) => {
         .from('projects')
         .update({ title: project.title,
             description: project.description,
-            image: project.image,
             githubUrl: project.githubUrl,
             demoUrl: project.demoUrl,
+            case_study: project.case_study,
             technologies: project.technologies.split(',') })
         .eq('id', project.id);
     if (error) {

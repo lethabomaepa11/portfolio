@@ -1,19 +1,15 @@
 <script>
 	import About from '$lib/pages/About.svelte';
 	import Contact from '$lib/pages/Contact.svelte';
-	import Projects from '$lib/pages/Projects.svelte';
 	import Services from '$lib/pages/Services.svelte';
 	import Skills from '$lib/pages/Skills.svelte';
 	import { onMount } from 'svelte';
 
 	let { data } = $props();
-	let validPages = $state(['skills', 'about', 'contact', 'services', 'projects']);
+	let validPages = $state(['skills', 'about', 'contact', 'services']);
 
 	const pages = [
-		{
-			title: 'Projects',
-			children: Projects
-		},
+
 		{
 			title: 'Skills',
 			children: Skills

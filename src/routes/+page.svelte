@@ -3,12 +3,12 @@
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import About from '$lib/pages/About.svelte';
 	import Contact from '$lib/pages/Contact.svelte';
-	import Projects from '$lib/pages/Projects.svelte';
 	import Services from '$lib/pages/Services.svelte';
 	import Skills from '$lib/pages/Skills.svelte';
 	import { Linkedin, Github, Mail, Download, Youtube } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { fade, slide } from 'svelte/transition';
+	import Page from './projects/+page.svelte';
 
 	// Props for customizable content
 	let {
@@ -23,7 +23,7 @@
 		},
 		{
 			title: 'Projects',
-			children: Projects
+			children: Page
 		},
 		{
 			title: 'Skills',
@@ -80,7 +80,7 @@
 				<!-- Call to Action Buttons -->
 				<div class="mb-12 flex justify-center gap-4 md:justify-start" in:fade={{ delay: 600 }}>
 					<Button color="alternative" class="group" href={isMobile ? '#projects' : '/projects'}>
-						View Work
+						View my projects
 						<span class="ml-2 transition-transform group-hover:translate-x-1">
 							<Download size={20} />
 						</span>
@@ -123,17 +123,14 @@
 
 			<!-- Profile Image -->
 			<div
-				class="mt-12 animate-pulse md:mt-0 md:w-1/2"
+				class="mt-12 md:mt-0 md:w-1/2"
 				in:slide={{ delay: 300, duration: 500, direction: 'right' }}
 			>
 				<div class="group relative">
-					<div
-						class="absolute -inset-2 rounded-full bg-blue-400/30 blur-lg transition-opacity group-hover:opacity-75"
-					></div>
 					<img
 						src="/coder.png"
 						alt="Lethabo Maepa"
-						class="relative mx-auto w-full max-w-md transform rounded-2xl transition-transform group-hover:-translate-y-2"
+						class="relative mx-auto w-full max-w-md transform transition-transform group-hover:-translate-y-2"
 					/>
 				</div>
 			</div>
@@ -142,7 +139,7 @@
 </section>
 {#if isMobile}
 	{#each pages as page}
-		<page.children pageData={data.data} />
+		<page.children pageData={data.data} data={data.data} />
 	{/each}
 {/if}
 

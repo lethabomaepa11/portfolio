@@ -98,50 +98,42 @@
 		<div class="mb-12 text-center">
 			<h2 class="mb-4 text-3xl font-bold text-gray-900 dark:text-white">Get in Touch</h2>
 			<p class="mx-auto max-w-xl text-gray-600 dark:text-gray-300">
-				Have a project in mind? Let's turn your ideas into reality. I'm just one message away!
+				Have a project in mind? Wish to collaborate? or just leaving a message? Feel free to contact
+				me.
 			</p>
 		</div>
 
 		<div class="grid gap-12 md:grid-cols-2">
 			<div class="space-y-6">
-				{#each contactInfo as contact}
-					<div class="flex items-center gap-4 rounded-lg bg-white p-4 dark:bg-gray-800">
-						<div class="rounded-full bg-blue-100 p-3 dark:bg-blue-900/20">
+				<div class="flex flex-col gap-2 rounded-lg border p-4">
+					{#each contactInfo as contact}
+						<h3 class="font-semibold text-gray-900 dark:text-white">{contact.title}</h3>
+						<div class="flex items-center gap-2 rounded bg-blue-100 p-3 dark:bg-blue-900/20">
 							<contact.icon class="h-6 w-6 text-blue-400" />
-						</div>
-						<div>
-							<h3 class="font-semibold text-gray-900 dark:text-white">{contact.title}</h3>
 							<a
 								href={contact.title === 'Email'
 									? `mailto:${contact.value}`
 									: `tel:${contact.value}`}
-								class="text-gray-600 dark:text-gray-300">{contact.value}</a
+								class="text-gray-600 hover:underline dark:text-gray-300">{contact.value}</a
 							>
 						</div>
+					{/each}
+
+					<h3 class="font-semibold text-gray-900 dark:text-white">LinkedIn</h3>
+					<div class="flex items-center gap-2 rounded bg-blue-100 p-3 dark:bg-blue-900/20">
+						<Linkedin class="h-6 w-6 text-blue-400" />
+						<a
+							href={pageData.info.linkedin}
+							class="text-gray-600 hover:underline dark:text-gray-300">@lethabomaepa11</a
+						>
 					</div>
-				{/each}
-
-				<!-- Repeat similar blocks for Phone and address -->
-
-				<div class="flex justify-center gap-6 md:justify-start" in:fade={{ delay: 900 }}>
-					<a
-						href={pageData.info.linkedin}
-						class="text-gray-400 transition-colors hover:text-blue-400"
-					>
-						<Linkedin size={24} />
-					</a>
-					<a
-						href={pageData.info.github}
-						class="text-gray-400 transition-colors hover:text-blue-400"
-					>
-						<Github size={24} />
-					</a>
-					<a
-						href={`mailto:${pageData.info.email}`}
-						class="text-gray-400 transition-colors hover:text-blue-400"
-					>
-						<Mail size={24} />
-					</a>
+					<h3 class="font-semibold text-gray-900 dark:text-white">Github</h3>
+					<div class="flex items-center gap-2 rounded bg-blue-100 p-3 dark:bg-blue-900/20">
+						<Github class="h-6 w-6 text-blue-400" />
+						<a href={pageData.info.github} class="text-gray-600 hover:underline dark:text-gray-300"
+							>@lethabomaepa11</a
+						>
+					</div>
 				</div>
 			</div>
 

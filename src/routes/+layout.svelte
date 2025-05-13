@@ -100,12 +100,12 @@
 	<title>Loading...</title>
 	<Loading />
 {:else}
-	<main class="flex items-center justify-center">
+	<main class="flex items-center justify-center divide-x">
 		{#if showSidebar}
 			<div
 				transition:fly
-				class="{navBarAtTop && !isMobile ? 'top-14' : 'h-[92svh]'} min-w-[13svw] {isMobile
-					? 'fixed left-0 top-0 z-50 h-screen w-[40svw] bg-background/95'
+				class="{navBarAtTop && !isMobile ? '-mt-16' : 'top-0 h-[92svh]'} min-w-[13svw] {isMobile
+					? 'fixed left-0  z-50 h-screen w-[40svw] bg-background/95'
 					: ''}"
 			>
 				{#if isMobile}
@@ -119,7 +119,7 @@
 		{:else}
 			<header
 				transition:slide={{ delay: 150, duration: 500, direction: 'right' }}
-				class="fixed top-0 z-50 flex h-14 w-full items-center justify-between border bg-background/95 p-3 bg-blend-overlay"
+				class="fixed top-0 z-50 flex h-14 w-full items-center justify-between bg-background/95 p-3 bg-blend-overlay"
 			>
 				<a href="/" class="  text-xl font-bold text-blue-400"><h1>Lethabo Maepa</h1></a>
 				<span class="space-x-4">
@@ -131,7 +131,7 @@
 		<div
 			class="h-screen w-screen py-20 {navBarAtTop
 				? 'md:h-[100svh]'
-				: 'md:h-[91-svh]'} md:w-[85svw] md:overflow-auto md:rounded-lg md:shadow-2xl lg:p-5"
+				: 'md:h-[91-svh]'} md:w-[85svw] md:overflow-auto lg:p-5"
 		>
 			{@render children()}
 		</div>
@@ -141,7 +141,7 @@
 			transition:slide={{ delay: 300, duration: 500, direction: 'right' }}
 			class="fixed {navBarAtTop
 				? 'top-0'
-				: 'bottom-0'} bottom-0 left-0 right-0 z-50 flex h-[8svh] w-screen items-center justify-between gap-3 border bg-background/80 p-3 backdrop-blur-sm"
+				: 'bottom-0'} bottom-0 left-0 right-0 z-50 flex h-[8svh] w-screen items-center justify-between gap-3 bg-background/80 p-3 backdrop-blur-sm"
 		>
 			<div id="left" class="flex items-center gap-3">
 				<ModeToggle />
@@ -172,7 +172,7 @@
 					</div>
 				{/each}
 			</div>
-			<div id="right" class="flex items-center gap-5 text-xs">
+			<div id="right" class="flex animate-bounce items-center gap-5 text-xs">
 				<button type="button" onclick={toggleNavBarAtTop}>
 					{#if navBarAtTop}
 						<ArrowDown />

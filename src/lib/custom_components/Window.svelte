@@ -2,7 +2,6 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import About from '$lib/pages/About.svelte';
 	import Contact from '$lib/pages/Contact.svelte';
-	import Projects from '$lib/pages/Projects.svelte';
 	import Services from '$lib/pages/Services.svelte';
 	import Skills from '$lib/pages/Skills.svelte';
 	import { ArrowUpRightFromSquare, Maximize, Minimize2, MinusIcon, X } from 'lucide-svelte';
@@ -21,10 +20,6 @@
 		{
 			title: '',
 			children: Page
-		},
-		{
-			title: 'Projects',
-			children: Projects
 		},
 		{
 			title: 'Skills',

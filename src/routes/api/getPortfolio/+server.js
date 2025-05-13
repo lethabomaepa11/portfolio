@@ -13,13 +13,10 @@ export const GET = async ({ locals:{ supabase } }) => {
         .select('*');
     if (skillsError) {
         return json({ success: false, error: skillsError });
-    }
-    const { data: projects,projectsError } = await supabase
-        .from('projects')
-        .select('*');
-    if (projectsError) {
-        return json({ success: false, error: projectsError });
-    }
+    }    
+    const {data: projects, error} = await supabase.from('projects').select('*').order('created_at', {ascending: true});
+
+
     
-    return json({ success: true, info: info[0], skills: skills, projects: projects });
+    return json({ success: true, info: info[0], skills: skills, projects });
 };

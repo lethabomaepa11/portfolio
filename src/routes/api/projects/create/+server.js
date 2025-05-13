@@ -28,7 +28,8 @@ export const POST = async ({ request, locals:{ supabase } }) => {
             image: project.image,
             githubUrl: project.githubUrl,
             demoUrl: project.demoUrl,
-            technologies: project.technologies.split(',')
+            technologies: project.technologies.split(','),
+            case_study: project.case_study
         })
         .single();
     if (error) {

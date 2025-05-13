@@ -6,23 +6,28 @@
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import { Github } from 'lucide-svelte';
 	import { fade, slide } from 'svelte/transition';
-	let { pageData } = $props();
+	let { data } = $props();
+	console.log(data.projects);
 	let mobile = $state(new IsMobile());
 	let isMobile = $state(mobile.current);
 </script>
 
+<svelte:head>
+	<title>Projects | DevLethabo</title>
+	<meta name="description" content="Projects | DevLethabo" />
+</svelte:head>
 <div
 	id="projects"
 	class="mx-auto max-w-6xl px-6 py-12"
 	transition:slide={{ delay: 300, duration: 500, direction: 'right' }}
 >
 	<h1 class="text-center text-5xl font-extrabold text-blue-400 drop-shadow-lg">My Projects</h1>
-	<p class="mt-3 text-center text-lg text-gray-300">Check out some of my best work below.</p>
+	<p class="mt-3 text-center text-lg text-primary">Check out some of my best work below.</p>
 
 	<div class="mt-10 grid grid-cols-1 gap-5">
-		{#each pageData.projects as project}
+		{#each data.projects as project}
 			<div
-				class="flex flex-col items-center gap-10 overflow-hidden rounded-xl p-6 shadow-lg transition-all duration-300 hover:shadow-2xl md:flex-row"
+				class="flex flex-col items-center gap-10 overflow-hidden rounded-xl p-6 transition-all duration-300 md:flex-row"
 			>
 				{#if isMobile}
 					<img src={project.image} alt={project.title} class="w-full" />
@@ -30,7 +35,7 @@
 					<LaptopMockUp image={project.image} />
 				{/if}
 				<span class="flex flex-col">
-					<h2 class="text-2xl font-semibold text-white">{project.title}</h2>
+					<h2 class="text-2xl font-semibold text-primary">{project.title}</h2>
 					<p class="mt-2 line-clamp-3 max-w-full break-words text-gray-400">
 						{project.description}
 					</p>
@@ -39,12 +44,8 @@
 							<span class="inline-block rounded-2xl bg-gray-700 px-2 py-1 text-xs">{tech}</span>
 						{/each}</span
 					>
-					<div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+					<div id={project.slug} class="mt-6 flex flex-wrap items-center justify-between gap-3">
 						<Button
-							onclick={(e) => {
-								e.preventDefault();
-								alert(`Case study for ${project.title} is coming soon!`);
-							}}
 							variant=""
 							disabled
 							size="lg"

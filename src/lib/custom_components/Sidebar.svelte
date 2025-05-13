@@ -5,7 +5,7 @@
 	import { slide } from 'svelte/transition';
 	let { isMobile } = $props();
 
-	const menuItems = [
+	let menuItems = [
 		{
 			title: 'Home',
 			url: '',
@@ -49,15 +49,18 @@
 	class="flex h-full w-full flex-col gap-1 p-2"
 	transition:slide={{ delay: 300, duration: 300, direction: 'right' }}
 >
-	<div class="flex h-full flex-col gap-1 px-5">
+	<div class="flex h-full flex-col items-start gap-5">
 		{#each menuItems as item}
-			<Button
+			<a
 				variant={item.variant}
 				size={isMobile ? 'lg' : 'icon'}
 				href={!isMobile ? `/${item.url}` : `/#${item.url}`}
-				class="group flex flex-col {$page.url?.pathname === item.url
+				class="group flex w-full items-center gap-2 p-3 {isMobile
+					? $page.url.hash === `#${item.url}`
+					: ''} {$page.url?.pathname === `/${item.url}`
 					? ' bg-blue-400/50'
-					: ''}   justify-center rounded-lg px-10 py-8 transition-all {item.class ?? ''}"
+					: ''}   justify-center rounded-lg {item.class ??
+					''} hover:bg-gray-200 hover:dark:bg-gray-800"
 				aria-label={item.title}
 				stateactive={$page.url?.pathname === item.url}
 			>
@@ -66,7 +69,7 @@
 					class="text-muted-foreground transition-colors group-hover:text-foreground"
 				/>
 				<span class="text-xs font-medium">{item.title}</span>
-			</Button>
+			</a>
 		{/each}
 	</div>
 </nav>
