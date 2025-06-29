@@ -13,7 +13,7 @@
 	]);
 </script>
 
-<section id="skills" class="bg-background py-16" transition:fade={{ duration: 500 }}>
+<section id="skills" class="bg-background py-16" transition:slide={{ duration: 500 }}>
 	<div class="container mx-auto max-w-6xl px-4">
 		<h2 class="mb-12 text-center text-3xl font-bold text-gray-900 dark:text-white">
 			Technical Skills

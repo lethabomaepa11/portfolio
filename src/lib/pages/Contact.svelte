@@ -37,7 +37,8 @@
 		success: false,
 		error: false
 	});
-	const handleSubmit = async () => {
+	const handleSubmit = async (e) => {
+		e.preventDefault();
 		statuses.loading = true;
 		statuses.success = false;
 		statuses.error = false;
@@ -139,6 +140,7 @@
 
 			<form
 				name="contact"
+				method="POST"
 				onsubmit={handleSubmit}
 				class="space-y-4 rounded-lg border bg-background/80 p-5 shadow-xl backdrop-blur"
 			>

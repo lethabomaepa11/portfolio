@@ -57,7 +57,7 @@
 
 <section class="bg-gradient-to-b from-gray-900 to-gray-800 px-4 py-10 md:py-10">
 	<div class="container mx-auto max-w-6xl">
-		<div class="flex flex-col items-center gap-12 md:flex-row" transition:fade={{ duration: 500 }}>
+		<div class="flex flex-col items-center gap-12 md:flex-row" transition:slide={{ duration: 500 }}>
 			<!-- Text Content -->
 			<div class="text-center md:w-1/2 md:text-left">
 				<div in:slide={{ delay: 300, duration: 500 }}>
@@ -112,7 +112,7 @@
 						<Mail size={24} />
 					</a>
 					<a
-						href="https://www.youtube.com/@devlethabo"
+						href="https://www.youtube.com/@lethabomaepa11"
 						target="_blank"
 						class="text-gray-400 transition-colors hover:text-blue-400"
 					>

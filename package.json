@@ -45,6 +45,7 @@
 		"@supabase/ssr": "^0.5.2",
 		"@supabase/supabase-js": "^2.49.1",
 		"mode-watcher": "^0.5.1",
-		"moment": "^2.30.1"
+		"moment": "^2.30.1",
+		"nprogress": "^0.2.0"
 	}
 }
