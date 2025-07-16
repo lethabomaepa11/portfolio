@@ -1,4 +1,5 @@
 <script>
+	import { afterNavigate } from '$app/navigation';
 	import Seo from '$lib/custom_components/SEO.svelte';
 	import About from '$lib/pages/About.svelte';
 	import Contact from '$lib/pages/Contact.svelte';
@@ -42,7 +43,7 @@
 		})
 	);
 
-	onMount(() => {
+	afterNavigate(() => {
 		currentPage = pages.find((page) => {
 			if (page.title.toLowerCase() === data.page) {
 				return page;

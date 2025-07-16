@@ -52,7 +52,7 @@
 	});
 </script>
 
-<Seo title="Lethabo Maepa" description={data.data.info.headline} />
+<Seo title="About Me" description="{data.data.info.headline}, {data.data.info.about}" />
 
 <section class="bg-gradient-to-b from-gray-900 to-gray-800 px-4 py-10 md:py-10">
 	<div class="container mx-auto max-w-6xl">

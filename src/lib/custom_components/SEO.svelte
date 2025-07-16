@@ -16,7 +16,7 @@
 </script>
 
 <svelte:head>
-	<title>{title}</title>
+	<title>{title} | Lethabo Maepa</title>
 	<meta name="description" content={desc} />
 
 	<meta name="twitter:card" content="summary_large_image" />

@@ -3,6 +3,7 @@
 	import AnimatedButton from '$lib/custom_components/AnimatedButton.svelte';
 	import GithubAnimated from '$lib/custom_components/GithubAnimated.svelte';
 	import LaptopMockUp from '$lib/custom_components/LaptopMockUp.svelte';
+	import Seo from '$lib/custom_components/SEO.svelte';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import { Github } from 'lucide-svelte';
 	import { fade, slide } from 'svelte/transition';
@@ -12,10 +13,7 @@
 	let isMobile = $state(mobile.current);
 </script>
 
-<svelte:head>
-	<title>Projects | DevLethabo</title>
-	<meta name="description" content="Projects | DevLethabo" />
-</svelte:head>
+<Seo title="Projects" desc="Check out some of my best work" />
 <div id="projects" class="mx-auto max-w-6xl px-6 py-12" transition:slide={{ delay: 300 }}>
 	<h1 class="text-center text-5xl font-extrabold text-blue-400 drop-shadow-lg">My Projects</h1>
 	<p class="mt-3 text-center text-lg text-primary">Check out some of my best work below.</p>
