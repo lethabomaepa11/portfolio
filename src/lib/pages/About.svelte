@@ -13,7 +13,7 @@
 
 <section
 	id="about"
-	class="bg-background py-16"
+	class="bg-background"
 	transition:slide={{ delay: 300, duration: 500, direction: 'right' }}
 >
 	<div class="container mx-auto max-w-6xl px-4">
@@ -24,7 +24,7 @@
 					{pageData.info.about}
 				</p>
 
-				<div class="mb-8 grid grid-cols-3 gap-4">
+				<div class="mb-8 hidden grid-cols-3 gap-4">
 					{#each stats as stat}
 						<div class="rounded-lg bg-blue-50 p-4 text-center dark:bg-gray-700">
 							<stat.icon class="mx-auto mb-2 h-6 w-6 text-blue-400" />

@@ -16,11 +16,7 @@
 	<title>Projects | DevLethabo</title>
 	<meta name="description" content="Projects | DevLethabo" />
 </svelte:head>
-<div
-	id="projects"
-	class="mx-auto max-w-6xl px-6 py-12"
-	transition:slide={{ delay: 300, duration: 500, direction: 'right' }}
->
+<div id="projects" class="mx-auto max-w-6xl px-6 py-12" transition:slide={{ delay: 300 }}>
 	<h1 class="text-center text-5xl font-extrabold text-blue-400 drop-shadow-lg">My Projects</h1>
 	<p class="mt-3 text-center text-lg text-primary">Check out some of my best work below.</p>
 
@@ -52,7 +48,7 @@
 							href="/projects/{project.title.replaceAll(' ', '-').toLowerCase()}"
 							class="flex w-full items-center gap-2"
 						>
-							<span>Case Study</span>
+							<span>About Project</span>
 						</Button>
 						{#if project.githubUrl.includes('https://')}
 							<Button

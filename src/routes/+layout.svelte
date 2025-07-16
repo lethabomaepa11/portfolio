@@ -28,6 +28,8 @@
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
 	import NProgress from 'nprogress';
 	import 'nprogress/nprogress.css';
+	import Footer from '$lib/custom_components/Footer.svelte';
+	import { pages } from '$lib/pages.svelte';
 
 	let { children, data } = $props();
 	let isLoading = $state(true);
@@ -38,50 +40,7 @@
 	afterNavigate(() => {
 		NProgress.done();
 	});
-	const taskBarItems = [
-		{
-			title: 'Home',
-			url: '/',
-			icon: House
-		},
-		{
-			title: 'Projects',
-			url: '/projects',
-			icon: FolderCode
-		},
-		{
-			title: 'Skills',
-			url: '/skills',
-			icon: BrainCog
-		},
-		{
-			title: 'Services',
-			url: '/services',
-			icon: HelpingHand
-		},
-		{
-			title: 'About',
-			url: '/about',
-			icon: User
-		},
-		{
-			title: 'Contact',
-			url: '/contact',
-			icon: Contact
-		}
-	];
 
-	let time = $state(moment().format('HH:mm'));
-	let date = $state(moment().format('YYYY/MM/DD'));
-	let openWindows = $state([]); //should have a store instead, to detect how many windows are open
-	/**There must not be a limit to the number of open windows
-	 * State of the windows can either be minimized, maximized or closed.
-	 * Also add a feature where windows open side by side.
-	 */
-	setInterval(() => {
-		time = moment().format('HH:mm');
-		date = moment().format('YYYY/MM/DD');
-	}, 1000);
 	let mobile = $state(new IsMobile());
 	let isMobile = $state(mobile.current);
 	let showSidebar = $state(!isMobile);
@@ -91,6 +50,12 @@
 			mobile = new IsMobile();
 			isMobile = mobile.current;
 			showSidebar = !isMobile;
+		});
+		//listen for a change in the hash on mobile, if the hash changed, it means the user clicked on another item in the sidebar
+		window.addEventListener('hashchange', () => {
+			if (isMobile && showSidebar == true) {
+				showSidebar = false;
+			}
 		});
 		let localNb = localStorage.getItem('navBarAtTop');
 		if (localNb) {
@@ -114,7 +79,7 @@
 		<Loading />
 	</div>
 {/if}
-<main transition:slide class="flex items-center justify-center divide-x">
+<main transition:slide class="cursor flex items-center justify-center divide-x">
 	{#if showSidebar}
 		<div
 			transition:fly
@@ -148,6 +113,7 @@
 			: 'md:h-[91-svh]'} md:w-[85svw] md:overflow-auto lg:p-5"
 	>
 		{@render children()}
+		<Footer />
 	</div>
 </main>
 {#if !isMobile}
@@ -162,20 +128,20 @@
 			<a href="/" class="  text-xl font-bold text-blue-400"><h1>Lethabo Maepa</h1></a>
 		</div>
 		<div id="center" class="flex items-center gap-5">
-			{#each taskBarItems as item}
+			{#each pages as item}
 				<!--When hovering on an icon, if there's a window open for that icon, display the contents of that window otherwise
 		just show the title of the icon on the tooltip-->
 				<Button
 					id="button-{item.title}"
 					data-tooltip-target="tooltip-{item.url}"
 					variant={'ghost'}
-					class="group flex flex-col hover:-translate-y-1 {$page.url?.pathname === item.url
+					href="/{item.url}"
+					class="group flex flex-col hover:-translate-y-1 {$page.url?.pathname === '/' + item.url
 						? ' rounded-none border-b border-blue-400 p-5'
 						: ''}   justify-center  transition-all {item.class ?? ''}"
 				>
 					<p class="">{item.title}</p>
 				</Button>
-				<Window pageData={data.data} page={item} />
 				<div
 					id="tooltip-{item.url}"
 					role="tooltip"
@@ -197,3 +163,9 @@
 		</div>
 	</section>
 {/if}
+
+<style>
+	.cursor {
+		cursor: url('/cursor.png'), auto;
+	}
+</style>

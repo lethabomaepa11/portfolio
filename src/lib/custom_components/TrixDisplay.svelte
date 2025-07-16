@@ -2,38 +2,42 @@
 	let { content } = $props();
 </script>
 
-<main>
+<article class="prose prose-lg w-full rounded-lg">
 	{@html content}
-</main>
+</article>
 
 <style>
-	main {
-		border: 1px solid #ddd;
+	article {
+		min-height: 200px;
 		border-radius: 0.5rem;
 		padding: 1rem;
 	}
 
-	main :global(h1) {
+	article :global(h1) {
 		@apply mb-2 text-2xl font-bold;
 	}
 
-	main :global(blockquote) {
-		@apply border-l-4 border-gray-300 pl-4 italic text-gray-600;
+	article :global(blockquote) {
+		@apply border-l-4 pl-4 italic;
 	}
 
-	main :global(pre) {
-		@apply rounded bg-gray-100 p-2 font-mono text-sm;
+	article :global(pre) {
+		@apply rounded p-2 font-mono text-sm;
 	}
 
-	main :global(a) {
-		@apply text-blue-600 underline;
+	article :global(a) {
+		@apply underline;
 	}
 
-	main :global(ul) {
+	article :global(ul) {
 		@apply list-inside list-disc;
 	}
 
-	main :global(ol) {
+	article :global(ol) {
 		@apply list-inside list-decimal;
+	}
+
+	article :global(ul li::marker),
+	article :global(ol li::marker) {
 	}
 </style>

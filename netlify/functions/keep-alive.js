@@ -1,6 +1,6 @@
 export const handler = async ({locals:{ supabase }}) => {
     try {
-        const url = 'https://lethabomaepa.netlify.app/api/getPortfolio';
+        const url = 'https://lethabomaepa.netlify.app/api/portfolio';
         const response = await fetch(url, { method: "GET" });
         const res = await response.json();
         //also just call from the supabase api

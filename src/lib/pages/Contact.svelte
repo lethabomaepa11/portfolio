@@ -10,7 +10,8 @@
 		Github,
 		Send,
 		CheckCheckIcon,
-		AlertTriangle
+		AlertTriangle,
+		Loader2
 	} from 'lucide-svelte';
 	import { slide, fade } from 'svelte/transition';
 	let { pageData } = $props();
@@ -145,7 +146,9 @@
 				class="space-y-4 rounded-lg border bg-background/80 p-5 shadow-xl backdrop-blur"
 			>
 				{#if statuses.loading}
-					<Loading />
+					<span class="flex items-center justify-between rounded bg-blue-300/50 p-2">
+						Please wait... <Loader2 class="animate-spin" />
+					</span>
 				{:else}
 					{#if statuses.success}
 						<span class="flex items-center justify-between rounded bg-green-300/50 p-2">

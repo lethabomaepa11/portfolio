@@ -76,6 +76,7 @@
 @layer base {
  * {
   @apply border-border;
+  cursor: url('/cursor.png');
  }
  body {
   @apply bg-background text-foreground;

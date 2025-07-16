@@ -10,8 +10,7 @@
 		},
 		{ icon: Smartphone, title: 'Mobile Apps', text: 'Cross-platform mobile solutions' },
 		{ icon: Server, title: 'Backend Services', text: 'Scalable API development & database design' },
-		{ icon: Layout, title: 'Full-Stack Solutions', text: 'End-to-end product development' },
-		{ icon: Palette, title: 'UI/UX Design', text: 'User-centered interface design' }
+		{ icon: Layout, title: 'Full-Stack Solutions', text: 'End-to-end product development' }
 	]);
 </script>
 
@@ -28,7 +27,7 @@
 			</p>
 		</div>
 
-		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+		<div class="grid gap-6 md:grid-cols-2">
 			{#each services as service}
 				<div class="group p-6 transition-all hover:border-blue-400">
 					<div class="mb-4 flex items-center gap-4">

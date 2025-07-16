@@ -5,10 +5,12 @@
 	import Contact from '$lib/pages/Contact.svelte';
 	import Services from '$lib/pages/Services.svelte';
 	import Skills from '$lib/pages/Skills.svelte';
-	import { Linkedin, Github, Mail, Download, Youtube } from 'lucide-svelte';
+	import { Linkedin, Github, Mail, Download, Youtube, Briefcase, BadgeInfo } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { fade, slide } from 'svelte/transition';
 	import Page from './projects/+page.svelte';
+	import Seo from '$lib/custom_components/SEO.svelte';
+	import Experience from '$lib/pages/Experience.svelte';
 
 	// Props for customizable content
 	let {
@@ -18,16 +20,16 @@
 	} = $props();
 	const pages = [
 		{
-			title: 'About',
-			children: About
-		},
-		{
 			title: 'Projects',
 			children: Page
 		},
 		{
 			title: 'Skills',
 			children: Skills
+		},
+		{
+			title: 'Experience',
+			children: Experience
 		},
 		{
 			title: 'Services',
@@ -50,10 +52,7 @@
 	});
 </script>
 
-<svelte:head>
-	<title>Lethabo Maepa</title>
-	<meta name="description" content={data.data.info.headline} />
-</svelte:head>
+<Seo title="Lethabo Maepa" description={data.data.info.headline} />
 
 <section class="bg-gradient-to-b from-gray-900 to-gray-800 px-4 py-10 md:py-10">
 	<div class="container mx-auto max-w-6xl">
@@ -80,9 +79,9 @@
 				<!-- Call to Action Buttons -->
 				<div class="mb-12 flex justify-center gap-4 md:justify-start" in:fade={{ delay: 600 }}>
 					<Button color="alternative" class="group" href={isMobile ? '#projects' : '/projects'}>
-						View my projects
+						View projects
 						<span class="ml-2 transition-transform group-hover:translate-x-1">
-							<Download size={20} />
+							<Briefcase size={20} />
 						</span>
 					</Button>
 					<Button color="blue" href={isMobile ? '#contact' : '/contact'}>Get in Touch</Button>
@@ -135,6 +134,7 @@
 				</div>
 			</div>
 		</div>
+		<About pageData={data.data} data={data.data} />
 	</div>
 </section>
 {#if isMobile}
