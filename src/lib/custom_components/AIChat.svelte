@@ -114,7 +114,9 @@
 			sender: 'assistant',
 			message: answer
 		});
+
 		speak(answer);
+
 		localStorage.setItem('lclmsgs', encrypt(JSON.stringify(messages)));
 		setTimeout(() => scrollToBottom(chat.element), 1);
 		formMessage = '';
@@ -131,7 +133,7 @@
 		});
 	};
 	onMount(() => {
-		chat.state = localStorage.getItem('chatState') || 'closed';
+		chat.state = localStorage.getItem('chatState') || 'minimized';
 		try {
 			const raw = localStorage.getItem('lclmsgs');
 			if (raw) {
