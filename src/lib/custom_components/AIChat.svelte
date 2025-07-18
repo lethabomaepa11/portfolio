@@ -236,7 +236,7 @@
 				<p class="text-xs text-green-700">{chat.isTyping ? 'typing...' : ''}</p>
 			</div>
 			<div class="flex gap-2">
-				{#if speechSynthesis.speaking}
+				{#if chat.isSpeaking}
 					<Button variant="ghost" onclick={() => speechSynthesis.cancel}>
 						<Volume2Icon />
 					</Button>
