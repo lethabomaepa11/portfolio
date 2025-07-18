@@ -19,7 +19,6 @@ export const POST = async ({ request, locals:{ supabase } }) => {
         project.image = `https://hhzlebpsqquwvkfdilvn.supabase.co/storage/v1/object/public/files/${data.path}`;
     }
 
-    console.log(project);
     const { data, error } = await supabase
         .from('projects')
         .insert({

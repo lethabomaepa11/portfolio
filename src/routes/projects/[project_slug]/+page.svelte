@@ -16,7 +16,6 @@
 			mobile = new IsMobile();
 			isMobile = mobile.current;
 		});
-		console.log(data.project);
 	});
 </script>
 

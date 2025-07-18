@@ -5,6 +5,7 @@
 		AppWindow,
 		ArrowDown,
 		ArrowUp,
+		BotMessageSquare,
 		BrainCog,
 		Contact,
 		FolderCode,
@@ -30,6 +31,8 @@
 	import 'nprogress/nprogress.css';
 	import Footer from '$lib/custom_components/Footer.svelte';
 	import { pages } from '$lib/pages.svelte';
+	import { models, portfolioContext } from '$lib/state.svelte';
+	import AiChat from '$lib/custom_components/AIChat.svelte';
 
 	let { children, data } = $props();
 	let isLoading = $state(true);
@@ -45,7 +48,22 @@
 	let isMobile = $state(mobile.current);
 	let showSidebar = $state(!isMobile);
 	let navBarAtTop = $state(true);
-	onMount(() => {
+
+	const getModels = async () => {
+		const res = await fetch('/api/ai/models', {
+			method: 'GET'
+		});
+		const response = await res.json();
+		return response.models.data;
+	};
+
+	portfolioContext.info = data.data;
+
+	onMount(async () => {
+		//get active ai models for usage
+		if (models.data.length == 0) {
+			models.data = await getModels();
+		}
 		window.addEventListener('resize', () => {
 			mobile = new IsMobile();
 			isMobile = mobile.current;
@@ -163,6 +181,8 @@
 		</div>
 	</section>
 {/if}
+
+<AiChat {isMobile} />
 
 <style>
 	.cursor {

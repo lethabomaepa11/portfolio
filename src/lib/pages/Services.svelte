@@ -1,17 +1,8 @@
 <script>
+	import { portfolioContext } from '$lib/state.svelte';
 	import { Layout, Code, Smartphone, Server, Palette } from 'lucide-svelte';
 	import { slide } from 'svelte/transition';
 	let { pageData } = $props();
-	let services = $state([
-		{
-			icon: Code,
-			title: 'Web Development',
-			text: 'Modern web applications using latest technologies'
-		},
-		{ icon: Smartphone, title: 'Mobile Apps', text: 'Cross-platform mobile solutions' },
-		{ icon: Server, title: 'Backend Services', text: 'Scalable API development & database design' },
-		{ icon: Layout, title: 'Full-Stack Solutions', text: 'End-to-end product development' }
-	]);
 </script>
 
 <section
@@ -28,7 +19,7 @@
 		</div>
 
 		<div class="grid gap-6 md:grid-cols-2">
-			{#each services as service}
+			{#each portfolioContext.services as service}
 				<div class="group p-6 transition-all hover:border-blue-400">
 					<div class="mb-4 flex items-center gap-4">
 						<div class="rounded-full bg-blue-100 p-3 dark:bg-blue-900/20">

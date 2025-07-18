@@ -1,16 +1,9 @@
 <script>
+	import { portfolioContext } from '$lib/state.svelte';
 	import { Code, Database, Cloud, Brush, Rocket } from 'lucide-svelte';
 	import { fade, slide } from 'svelte/transition';
 
 	let { pageData } = $props();
-	let skills = $state([
-		{ name: 'Frontend', icon: Code, level: 90, tools: 'React, Svelte, Vue.js, HTML/CSS' },
-		{ name: 'Full-Stack', icon: Brush, level: 88, tools: 'NextJs, SvelteKit, Nuxt.js' },
-		{ name: 'Backend', icon: Database, level: 85, tools: 'Node.js, .NET, Supabase, Appwrite' },
-		{ name: 'Database', icon: Cloud, level: 80, tools: 'PostgreSQL, Microsoft SQL Server, Oracle' },
-		{ name: 'Languages', icon: Code, tools: 'Javascript, Typescript, Python, C#, Java' },
-		{ name: 'Tools', icon: Rocket, tools: 'Git, GitHub, Docker, Vercel, Netlify' }
-	]);
 </script>
 
 <section id="skills" class="bg-background py-16" transition:slide={{ duration: 500 }}>
@@ -19,7 +12,7 @@
 			Tools & Technologies
 		</h2>
 		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-			{#each skills as skill, index}
+			{#each portfolioContext.skills as skill, index}
 				<div
 					in:slide={{ delay: 600 }}
 					class="group p-6 transition-all duration-300 hover:border-blue-400"

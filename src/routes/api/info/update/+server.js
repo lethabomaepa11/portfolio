@@ -1,13 +1,11 @@
 
 import { json } from '@sveltejs/kit';
-import { isConstructorDeclaration } from 'typescript';
 
 export const POST = async ({ request, locals:{ supabase } }) => {
     const formData = await request.formData();
     const aboutInfo = Object.fromEntries(formData.entries());
 
     if(aboutInfo.resume instanceof File) {
-        console.log(aboutInfo.resume)
         const { data, error } = await supabase
         .storage
         .from('files')

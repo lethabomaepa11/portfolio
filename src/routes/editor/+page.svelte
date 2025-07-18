@@ -58,7 +58,6 @@
 		formData.append('id', 1);
 		formData.append('about', aboutInfo.about);
 		formData.append('headline', aboutInfo.headline);
-		console.log(formData);
 		const response = await fetch('/api/info/update', {
 			method: 'POST',
 			body: formData
@@ -75,7 +74,6 @@
 		isLoading = true;
 		const formData = new FormData(e.target);
 		const contactInfo = Object.fromEntries(formData.entries());
-		console.log(contactInfo);
 		const response = await fetch('/api/contact/update', {
 			method: 'POST',
 			body: contactInfo

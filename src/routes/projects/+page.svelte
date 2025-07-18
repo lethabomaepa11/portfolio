@@ -8,7 +8,6 @@
 	import { Github } from 'lucide-svelte';
 	import { fade, slide } from 'svelte/transition';
 	let { data } = $props();
-	console.log(data.projects);
 	let mobile = $state(new IsMobile());
 	let isMobile = $state(mobile.current);
 </script>
