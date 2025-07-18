@@ -212,7 +212,7 @@
 	</Button>
 {:else}
 	<div
-		class=" fixed bottom-4 right-10 z-50 flex shadow-lg {chat.state == 'open'
+		class=" fixed bottom-4 z-50 flex shadow-lg lg:right-10 {chat.state == 'open'
 			? 'h-[80svh]'
 			: ''} w-[100svw] flex-col justify-between rounded-2xl border bg-background p-2
         shadow-xl lg:w-2/6"
