@@ -237,7 +237,13 @@
 			</div>
 			<div class="flex gap-2">
 				{#if chat.isSpeaking}
-					<Button variant="ghost" onclick={() => speechSynthesis.cancel}>
+					<Button
+						variant="ghost"
+						onclick={() => {
+							speechSynthesis.cancel;
+							chat.isSpeaking = false;
+						}}
+					>
 						<Volume2Icon />
 					</Button>
 				{/if}
