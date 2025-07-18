@@ -29,7 +29,7 @@
 	]);
 	let formMessage = $state('');
 	let chat = $state({
-		state: 'closed', //closed, minimized or open
+		state: 'minimized', //closed, minimized or open
 		isTyping: false,
 		isRedirecting: false,
 		redirectPage: '',
