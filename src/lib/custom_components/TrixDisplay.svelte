@@ -8,7 +8,6 @@
 
 <style>
 	article {
-		min-height: 200px;
 		border-radius: 0.5rem;
 		padding: 1rem;
 	}

@@ -5,6 +5,7 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import { models } from '$lib/state.svelte';
+	import { marked } from 'marked';
 	import {
 		BotMessageSquare,
 		Maximize2,
@@ -67,8 +68,14 @@
 		}
 
 		//the question
-		models.question = formMessage.trim() + '\nCurrent page is ' + page.url.pathname;
+		models.question =
+			formMessage.trim() +
+			'\nCurrent page is ' +
+			page.url.pathname +
+			'\n Our chat history, you are the assistant: ' +
+			JSON.stringify(messages);
 
+		//
 		//call the api
 		const chatRes = await fetch('/api/ai', {
 			method: 'POST',
@@ -79,8 +86,9 @@
 		const response = await chatRes.json();
 
 		chat.isTyping = false;
+		const errorResponses = ['safe', 'unsafe\nS7'];
 
-		if (!response.success) {
+		if (!response.success || errorResponses.includes(response.response)) {
 			//add it to the messages
 			messages.push({
 				sender: 'assistant',
@@ -91,33 +99,20 @@
 
 		//for redirect/navigation feat
 		let answer = response.response.trim();
-		const inLower = answer.toLowerCase();
-		const searchString = 'redirect(';
-		if (inLower.includes(searchString)) {
-			//get the page,
-			const startIndex = inLower.lastIndexOf(searchString) + searchString.length;
-			const endIndex = inLower.indexOf(')', startIndex);
-			let page = inLower.substring(startIndex, endIndex);
-			if (page.includes('about')) {
-				page = ''; //root page
-			}
-			answer = answer.replace(
-				inLower.substring(startIndex - searchString.length, endIndex + 1),
-				'Taking you to: ' + page + ' page'
-			);
-			chat.isRedirecting = true;
-			chat.redirectPage = page;
-			goto((isMobile ? '#' : '/') + page);
+		if (answer.includes('<think>')) {
+			answer = handleThinking(answer);
 		}
+
+		answer = handleAutoRedirect(answer);
+
 		//add it to the messages
 		messages.push({
 			sender: 'assistant',
 			message: answer
 		});
 
-		speak(answer);
+		speak(answer); //avoid speaking cos it annoys sometimes
 
-		localStorage.setItem('lclmsgs', encrypt(JSON.stringify(messages)));
 		setTimeout(() => scrollToBottom(chat.element), 1);
 		formMessage = '';
 	};
@@ -132,17 +127,42 @@
 			behaviour: 'smooth'
 		});
 	};
+	const handleThinking = (answer) => {
+		//removes the text from the start of <think> to the end of </think>
+		const tag = 'think>';
+		const endIndex = answer.indexOf('</' + tag);
+		return answer.substring(endIndex + tag.length + 2).trim();
+	};
+	const handleAutoRedirect = (answer) => {
+		const inLower = answer.toLowerCase();
+
+		const searchString = 'redirect(';
+		if (inLower.includes(searchString)) {
+			//get the page,
+			const startIndex = inLower.lastIndexOf(searchString) + searchString.length;
+			const endIndex = inLower.indexOf(')', startIndex);
+			let page = inLower.substring(startIndex, endIndex);
+
+			if (page.includes('about')) {
+				page = ''; //root page
+			}
+
+			answer =
+				'Taking you to ' +
+				page +
+				' page\n' +
+				answer.replace(inLower.substring(startIndex - searchString.length, endIndex + 1), '');
+
+			chat.isRedirecting = true;
+			chat.redirectPage = page;
+			goto((isMobile ? '#' : '/') + page);
+			return answer;
+		}
+
+		return answer;
+	};
 	onMount(() => {
 		chat.state = localStorage.getItem('chatState') || 'minimized';
-		try {
-			const raw = localStorage.getItem('lclmsgs');
-			if (raw) {
-				messages = JSON.parse(decrypt(raw)) || messages;
-				setTimeout(() => scrollToBottom(chat.element), 1);
-			}
-		} catch (err) {
-			// Optionally reset or ignore
-		}
 	});
 
 	const handleSpeechToText = (e) => {
@@ -207,12 +227,15 @@
 	};
 </script>
 
+<!--When the chat is closed, display on the ASK LeeAI button-->
 {#if chat.state == 'closed'}
 	<Button onclick={() => handleChatStateChange('open')} class="fixed bottom-4 right-10">
 		<BotMessageSquare />
 		Ask LeeAI
 	</Button>
 {:else}
+	<!--When the chat is not closed/ is open or minimized-->
+
 	<div
 		class=" fixed bottom-4 z-50 mx-[4svw] flex shadow-lg lg:right-10 lg:m-0 {chat.state == 'open'
 			? 'h-[80svh]'
@@ -242,7 +265,7 @@
 					<Button
 						variant="ghost"
 						onclick={() => {
-							speechSynthesis.cancel;
+							speechSynthesis.cancel();
 							chat.isSpeaking = false;
 						}}
 					>
@@ -276,8 +299,10 @@
 				{#each messages as message}
 					{#if message.sender == 'assistant'}
 						<div class="flex w-full justify-start">
-							<div class="max-w-[70%] overflow-clip whitespace-pre-wrap rounded-xl bg-gray-500 p-2">
-								{message.message}
+							<div
+								class=" prose prose-lg max-w-[70%] overflow-clip whitespace-pre-wrap rounded-xl bg-gray-300 p-2 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
+							>
+								{@html marked(message.message)}
 							</div>
 						</div>
 					{:else}
@@ -292,7 +317,9 @@
 				{/each}
 				{#if chat.isTyping}
 					<div class="w-full">
-						<div class="max-w-2/3 end-0 animate-ping whitespace-pre-wrap rounded-xl">typing...</div>
+						<div class="max-w-2/3 end-0 animate-pulse whitespace-pre-wrap rounded-xl">
+							typing...
+						</div>
 					</div>
 				{/if}
 				{#if chat.isRedirecting}
@@ -335,3 +362,33 @@
 		{/if}
 	</div>
 {/if}
+
+<style>
+	.prose :global(h1) {
+		@apply mb-2 text-2xl font-bold;
+	}
+
+	.prose :global(blockquote) {
+		@apply border-l-4 pl-4 italic;
+	}
+
+	.prose :global(pre) {
+		@apply rounded p-2 font-mono text-sm;
+	}
+
+	.prose :global(a) {
+		@apply underline;
+	}
+
+	.prose :global(ul) {
+		@apply list-inside list-disc;
+	}
+
+	.prose :global(ol) {
+		@apply list-inside list-decimal;
+	}
+
+	.prose :global(ul li::marker),
+	.prose :global(ol li::marker) {
+	}
+</style>
