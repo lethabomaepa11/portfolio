@@ -79,7 +79,7 @@
 		//call the api
 		const chatRes = await fetch('/api/ai', {
 			method: 'POST',
-			body: JSON.stringify({ model: chat.model.id, message: models.promptMessage() })
+			body: JSON.stringify({ model: chat.model.id, message: encrypt(models.promptMessage()) })
 		});
 
 		//the response

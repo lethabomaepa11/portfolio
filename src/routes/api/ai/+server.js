@@ -2,6 +2,7 @@ import Groq from 'groq-sdk';
 import { GROQ_API_KEY } from '$env/static/private';
 import { json, error } from '@sveltejs/kit';
 import { rateLimit } from '$lib/rateLimiter.js';
+import { decrypt } from '$lib';
 
 
 
@@ -31,7 +32,9 @@ export const POST = async ({ request, getClientAddress}) => {
             throw error(400, 'Invalid JSON payload');
         }
 
-        const { message, model } = data;
+        let { message, model } = data;
+        //decrypt the message
+        message = decrypt(message);
         // Validate inputs
         if (!message?.trim() || typeof message !== 'string') {
             throw error(400, 'Message is required');
