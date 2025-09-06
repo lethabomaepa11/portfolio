@@ -60,10 +60,6 @@
 	portfolioContext.info = data.data;
 
 	onMount(async () => {
-		//get active ai models for usage
-		if (models.data.length == 0) {
-			models.data = await getModels();
-		}
 		window.addEventListener('resize', () => {
 			mobile = new IsMobile();
 			isMobile = mobile.current;

@@ -49,6 +49,7 @@
 		class="mt-10 flex w-full flex-col gap-4 overflow-y-auto p-2"
 		transition:slide={{ delay: 300, duration: 300, direction: 'right' }}
 	>
+		<h3 class=" text-xl font-semibold text-gray-900 dark:text-white">My Activity</h3>
 		<!-- GitHub Stats Card -->
 		<img
 			class="w-[250px] rounded-lg"

@@ -45,10 +45,7 @@
 			setTimeout(() => scrollToBottom(chat.element), 10);
 		}
 	};
-	const handleModelChange = () => {
-		chat.model = models.getModel(modelIndex);
-	};
-	let modelIndex = $state(0);
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		if (formMessage.length === 0) {
@@ -62,11 +59,6 @@
 
 		chat.isTyping = true;
 
-		if (!chat.model) {
-			//get a random model
-			chat.model = models.getRandomModel();
-		}
-
 		//the question
 		models.question =
 			formMessage.trim() +
@@ -79,7 +71,7 @@
 		//call the api
 		const chatRes = await fetch('/api/ai', {
 			method: 'POST',
-			body: JSON.stringify({ model: chat.model.id, message: encrypt(models.promptMessage()) })
+			body: JSON.stringify({ message: encrypt(models.promptMessage()) })
 		});
 
 		//the response
@@ -229,7 +221,7 @@
 
 <!--When the chat is closed, display on the ASK LeeAI button-->
 {#if chat.state == 'closed'}
-	<Button onclick={() => handleChatStateChange('open')} class="fixed bottom-4 right-10">
+	<Button onclick={() => handleChatStateChange('open')} class="fixed bottom-4 right-10 z-50">
 		<BotMessageSquare />
 		Ask LeeAI
 	</Button>
@@ -330,18 +322,7 @@
 					</div>
 				{/if}
 			</main>
-			<div transition:slide class="my-2 flex gap-3">
-				Model:
-				<select
-					class="rounded-2xl border-current bg-background text-current"
-					bind:value={modelIndex}
-					onchange={handleModelChange}
-				>
-					{#each models.data as llm, i}
-						<option value={i}>{llm.id}</option>
-					{/each}
-				</select>
-			</div>
+
 			<form
 				transition:slide
 				method="POST"

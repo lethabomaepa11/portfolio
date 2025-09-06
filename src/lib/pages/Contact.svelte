@@ -31,7 +31,8 @@
 		name: '',
 		email: '',
 		message: '',
-		subject: 'Thank you for reaching out'
+		subject: 'Thank you for reaching out',
+		error: ''
 	});
 	let statuses = $state({
 		loading: false,
@@ -85,9 +86,32 @@
 				}
 			}
 		} else {
+			form.error = '';
+
+			if (!form.message.length) {
+				form.error = '\nPlease enter your message';
+			}
+			if (!form.email.length) {
+				form.error = '\nPlease enter your email';
+			}
+			if (!form.name.length) {
+				form.error = '\nPlease enter your name';
+			}
+			if (!form.message && !form.email && !form.name) {
+				form.error = '\nPlease enter your name, email and message';
+			}
 			statuses.error = true;
 		}
 		statuses.loading = false;
+	};
+
+	let formRef = $state();
+	const bringFormToCenter = (e) => {
+		console.log(e);
+		formRef.scrollIntoView({
+			behavior: 'smooth',
+			block: 'center'
+		});
 	};
 </script>
 
@@ -107,10 +131,10 @@
 
 		<div class="grid gap-12 md:grid-cols-2">
 			<div class="space-y-6">
-				<div class="flex flex-col gap-2 rounded-lg border p-4">
+				<div class=" flex flex-col gap-2 rounded-lg p-4">
 					{#each contactInfo as contact}
 						<h3 class="font-semibold text-gray-900 dark:text-white">{contact.title}</h3>
-						<div class="flex items-center gap-2 rounded bg-blue-100 p-3 dark:bg-blue-900/20">
+						<div class="flex items-center gap-2 rounded p-3">
 							<contact.icon class="h-6 w-6 text-blue-400" />
 							<a
 								href={contact.title === 'Email'
@@ -122,7 +146,7 @@
 					{/each}
 
 					<h3 class="font-semibold text-gray-900 dark:text-white">LinkedIn</h3>
-					<div class="flex items-center gap-2 rounded bg-blue-100 p-3 dark:bg-blue-900/20">
+					<div class="flex items-center gap-2 rounded p-3">
 						<Linkedin class="h-6 w-6 text-blue-400" />
 						<a
 							href={pageData.info.linkedin}
@@ -130,7 +154,7 @@
 						>
 					</div>
 					<h3 class="font-semibold text-gray-900 dark:text-white">Github</h3>
-					<div class="flex items-center gap-2 rounded bg-blue-100 p-3 dark:bg-blue-900/20">
+					<div class="flex items-center gap-2 rounded p-3">
 						<Github class="h-6 w-6 text-blue-400" />
 						<a href={pageData.info.github} class="text-gray-600 hover:underline dark:text-gray-300"
 							>@lethabomaepa11</a
@@ -139,25 +163,33 @@
 				</div>
 			</div>
 
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
+			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 			<form
+				bind:this={formRef}
+				onclick={bringFormToCenter}
 				name="contact"
 				method="POST"
 				onsubmit={handleSubmit}
 				class="space-y-4 rounded-lg border bg-background/80 p-5 shadow-xl backdrop-blur"
 			>
 				{#if statuses.loading}
-					<span class="flex items-center justify-between rounded bg-blue-300/50 p-2">
+					<span class="flex items-center justify-between rounded p-2 text-sm text-blue-400">
 						Please wait... <Loader2 class="animate-spin" />
 					</span>
 				{:else}
 					{#if statuses.success}
-						<span class="flex items-center justify-between rounded bg-green-300/50 p-2">
-							Your message was sent successfully <CheckCheckIcon />
+						<span class="flex flex-col rounded p-2 text-sm text-green-400">
+							<p class="flex items-center justify-between">
+								Your message was sent successfully <CheckCheckIcon />
+							</p>
+							Please Check your emails for confirmation.
 						</span>
 					{/if}
 					{#if statuses.error}
-						<span class="flex items-center justify-between rounded bg-red-300/50 p-2">
-							Something went wrong! <AlertTriangle />
+						<span class="flex items-center justify-between rounded p-2 text-sm text-red-400">
+							{form.error || 'Oops...Something went wrong!, Please try again.'}
+							<AlertTriangle />
 						</span>
 					{/if}
 					<div>
@@ -184,6 +216,12 @@
 							rows="5"
 							placeholder="Your message..."
 						></textarea>
+						<Button variant="link" target="_blank" class="text-sm text-green-400">
+							<AlertTriangle />
+							<a href="https://www.brevo.com/en/" class="font-bold underline" target="_blank"
+								>Brevo</a
+							> is used to send emails from this form.</Button
+						>
 						<Button color="blue" type="submit" class="w-full">
 							<Send class="mr-2" /> Send Message
 						</Button>

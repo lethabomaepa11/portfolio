@@ -10,15 +10,69 @@
 	let { data } = $props();
 	let mobile = $state(new IsMobile());
 	let isMobile = $state(mobile.current);
+
+	const tabs = $state([
+		{ name: 'All', current: true },
+		{ name: 'Svelte', current: false },
+		{ name: 'NextJS', current: false },
+		{ name: 'Vanilla', current: false }
+	]);
+
+	let projects = $state(data.projects);
+
+	const handleTabClick = (tab) => {
+		tabs.forEach((t) => {
+			t.current = false;
+		});
+		tab.current = true;
+
+		if (tab.name === 'All') {
+			projects = data.projects;
+			return;
+		}
+
+		projects = data.projects.filter((project) => {
+			return project.technologies.includes(tab.name);
+		});
+	};
 </script>
 
 <Seo title="Projects" desc="Check out some of my best work" />
 <div id="projects" class="mx-auto max-w-6xl px-6 py-12" transition:slide={{ delay: 300 }}>
-	<h1 class="text-center text-5xl font-extrabold text-blue-400 drop-shadow-lg">My Projects</h1>
-	<p class="mt-3 text-center text-lg text-primary">Check out some of my best work below.</p>
+	<h1 class="text-center text-3xl font-extrabold text-blue-400 drop-shadow-lg">My Projects</h1>
 
-	<div class="mt-10 grid grid-cols-1 gap-5">
-		{#each data.projects as project}
+	<div class=" flex w-full items-center gap-2">
+		{#each tabs as tab}
+			<Button
+				onclick={() => handleTabClick(tab)}
+				variant={tab.current ? 'default' : 'ghost'}
+				class="flex items-center gap-2 transition-all duration-300 hover:text-blue-400"
+				>{tab.name}
+				{#if tab.current}
+					({projects.length})
+				{/if}
+			</Button>
+		{/each}
+	</div>
+	<p class="mt-5 text-sm">
+		Showing {tabs.filter((tab) => tab.current)[0].name} projects
+	</p>
+
+	<!-- No projects -->
+	{#if projects.length === 0}
+		<div class="mt-5 grid grid-cols-1 gap-5">
+			<div
+				class="flex flex-col items-center gap-10 overflow-hidden rounded-xl p-6 transition-all duration-300 md:flex-row"
+			>
+				<span class="flex flex-col">
+					<h2 class="text-2xl font-semibold text-primary">No projects found</h2>
+					<p class="mt-2 line-clamp-3 max-w-full break-words text-gray-400"></p>
+				</span>
+			</div>
+		</div>
+	{/if}
+	<div class="mt-5 grid grid-cols-1 gap-5">
+		{#each projects as project}
 			<div
 				class="flex flex-col items-center gap-10 overflow-hidden rounded-xl p-6 transition-all duration-300 md:flex-row"
 			>
@@ -42,7 +96,7 @@
 							variant=""
 							disabled
 							size="lg"
-							href="/projects/{project.title.replaceAll(' ', '-').toLowerCase()}"
+							href="/projects/{project.slug}"
 							class="flex w-full items-center gap-2"
 						>
 							<span>About Project</span>

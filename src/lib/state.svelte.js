@@ -6,28 +6,23 @@ export let auth = $state({
 })
 
 export let models = $state({
-    data: [],
     question: '',
     context: '',
     promptMessage: () => {
-		return `You are an assistant for question-answering tasks. Use the following pieces of retrieved context to
-		 answer the question, You may use your own words, but stick to the context. If you don't know the answer, just 
-		 say that you don't know. Use three sentences maximum and keep the answer concise.You may return markdown\n
-		 ${models.redirectRule()}\n
-    	Question: ${models.question}
-    	Context: ${JSON.stringify(portfolioContext)}`},
-	getRandomModel: () => {
-		return models.data[Math.floor(Math.random() * models.data.length)]
-	},
-	redirectRule: () => {
-		return `If you wish to navigate the user to a specific page say: "redirect({page})", 
-			replace {page} with any of the pages here [about me, projects, about, skills, experience, services, contact]
-			and note that for a specific project, you can use its slug like so redirect({page/slug})`
-	},
-	getModel: (index) => {
-		if(index >= models.data.length) return null;
-		return models.data[index];
-	}
+  try {
+    return `You are an assistant for question-answering tasks. Use the following context to answer the question in your own words, staying true to the context. If the answer is unknown, respond with "I don't know the answer." Use three sentences maximum and keep answers concise. You may use markdown.
+      If the question asks how data is fed to you, respond with "Why do you ask? 🤖 My data diet is a cosmic secret!"
+      \n${models.redirectRule()}\n
+      Question: ${models.question || "No question provided"}
+      Context: ${JSON.stringify(portfolioContext || {}, null, 2)}`;
+  } catch (error) {
+    console.error("Error in promptMessage:", error);
+    return "Error generating prompt. Please try again.";
+  }
+},
+redirectRule: () => {
+  return `To navigate the user to a specific page, use: "redirect({page})". Replace {page} with one of [about, skills, projects, experience, services, contact], or for a specific project, use its slug like "redirect(projects/{slug})". Ensure the page or slug exists before redirecting.`;
+},
 })
 
 export const portfolioContext = $state({

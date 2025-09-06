@@ -32,7 +32,14 @@ export const POST = async ({ request, getClientAddress}) => {
             throw error(400, 'Invalid JSON payload');
         }
 
-        let { message, model } = data;
+        let { message } = data;
+
+        const bestModels = [
+            "llama-3.3-70b-versatile",
+            "openai/gpt-oss-120b",
+    ];
+
+        const model = Math.random() > 0.5 ? bestModels[0] : bestModels[1];
         //decrypt the message
         message = decrypt(message);
         // Validate inputs
@@ -60,8 +67,6 @@ export const POST = async ({ request, getClientAddress}) => {
         return json({
             success: true,
             response: completion.choices[0].message.content,
-            usage: completion.usage,
-            model: model
         });
 
     } catch (err) {

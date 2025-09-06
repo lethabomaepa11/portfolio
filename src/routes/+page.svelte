@@ -5,7 +5,18 @@
 	import Contact from '$lib/pages/Contact.svelte';
 	import Services from '$lib/pages/Services.svelte';
 	import Skills from '$lib/pages/Skills.svelte';
-	import { Linkedin, Github, Mail, Download, Youtube, Briefcase, BadgeInfo } from 'lucide-svelte';
+	import {
+		Linkedin,
+		Github,
+		Mail,
+		Download,
+		Youtube,
+		Briefcase,
+		BadgeInfo,
+		ArrowRight,
+		ChevronDown,
+		ChevronUp
+	} from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { fade, slide } from 'svelte/transition';
 	import Page from './projects/+page.svelte';
@@ -44,6 +55,17 @@
 	let mobile = $state(new IsMobile());
 	let isMobile = $state(mobile.current);
 
+	const moreAboutState = $state({
+		open: true,
+		icon: ChevronUp,
+		text: 'Less about me'
+	});
+	const toggleMoreAbout = () => {
+		moreAboutState.open = !moreAboutState.open;
+		moreAboutState.icon = moreAboutState.open ? ChevronUp : ChevronDown;
+		moreAboutState.text = moreAboutState.open ? 'Less about me' : 'More about me';
+	};
+
 	onMount(() => {
 		window.addEventListener('resize', () => {
 			mobile = new IsMobile();
@@ -60,8 +82,8 @@
 			<!-- Text Content -->
 			<div class="text-center md:w-1/2 md:text-left">
 				<div in:slide={{ delay: 300, duration: 500 }}>
-					<h1 class="mb-6 text-4xl font-bold md:text-6xl">
-						Hey, I'm <span
+					<h1 class="mb-6 text-3xl font-bold md:text-6xl">
+						I'm <span
 							oncopy={() => {
 								if (prompt('Wish to copy my name?') == 'edit') {
 									alert('Okay');
@@ -127,14 +149,20 @@
 			>
 				<div class="group relative">
 					<img
-						src="/coder.png"
+						src="/home.jpg"
 						alt="Lethabo Maepa"
-						class="relative mx-auto w-full max-w-md transform transition-transform group-hover:-translate-y-2"
+						class="relative aspect-square w-full max-w-sm transform rounded-full transition-transform group-hover:-translate-y-2"
 					/>
 				</div>
 			</div>
 		</div>
-		<About pageData={data.data} data={data.data} />
+		<Button onclick={toggleMoreAbout} variant="link" class="flex items-center"
+			>{moreAboutState.text} <moreAboutState.icon size={20} /></Button
+		>
+
+		{#if moreAboutState.open}
+			<About pageData={data.data} data={data.data} />
+		{/if}
 	</div>
 </section>
 {#if isMobile}

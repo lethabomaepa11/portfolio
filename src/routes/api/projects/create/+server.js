@@ -19,10 +19,16 @@ export const POST = async ({ request, locals:{ supabase } }) => {
         project.image = `https://hhzlebpsqquwvkfdilvn.supabase.co/storage/v1/object/public/files/${data.path}`;
     }
 
+    const slug = project.title
+        .toLowerCase()
+        .replace(/ /g, '-')
+        .replace(/[^\w-]+/g, '');
+
     const { data, error } = await supabase
         .from('projects')
         .insert({
             title: project.title,
+            slug: slug,
             description: project.description,
             image: project.image,
             githubUrl: project.githubUrl,
