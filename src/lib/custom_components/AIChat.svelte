@@ -292,6 +292,7 @@
 					{#if message.sender == 'assistant'}
 						<div class="flex w-full justify-start">
 							<div
+								transition:scale
 								class=" prose prose-lg max-w-[70%] overflow-clip whitespace-pre-wrap rounded-xl bg-gray-300 p-2 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
 							>
 								{@html marked(message.message)}
@@ -300,6 +301,7 @@
 					{:else}
 						<div class="flex w-full justify-end">
 							<div
+								transition:scale
 								class="max-w-2/3 max-w-[70%] overflow-clip whitespace-pre-wrap rounded-xl border p-2"
 							>
 								{message.message}
