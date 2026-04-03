@@ -1,6 +1,7 @@
 <script>
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
+	import { trackRecruiterAction } from '$lib/recruiter-tools.js';
 	import {
 		AlertTriangle,
 		CheckCheckIcon,
@@ -54,6 +55,7 @@
 			form.error = errors.join('\n');
 			statuses.error = true;
 			statuses.loading = false;
+			trackRecruiterAction('contact_form_validation_error', { source: 'contact_section' });
 			return;
 		}
 
@@ -75,6 +77,7 @@
 		if (!visitorResult.success) {
 			statuses.error = true;
 			statuses.loading = false;
+			trackRecruiterAction('contact_form_send_error', { stage: 'visitor', source: 'contact_section' });
 			return;
 		}
 
@@ -102,8 +105,10 @@
 				error: ''
 			};
 			statuses.success = true;
+			trackRecruiterAction('contact_form_submit_success', { source: 'contact_section' });
 		} else {
 			statuses.error = true;
+			trackRecruiterAction('contact_form_send_error', { stage: 'owner', source: 'contact_section' });
 		}
 
 		statuses.loading = false;
@@ -128,7 +133,10 @@
 						<p class="text-xs uppercase tracking-[0.14em] text-muted-foreground">{contact.title}</p>
 						<div class="mt-2 flex items-center gap-2 text-sm">
 							<contact.icon class="h-4 w-4 text-primary" />
-							<a href={contact.title === 'Email' ? `mailto:${contact.value}` : `tel:${contact.value}`}>
+							<a
+								href={contact.title === 'Email' ? `mailto:${contact.value}` : `tel:${contact.value}`}
+								onclick={() => trackRecruiterAction('contact_info_click', { type: contact.title.toLowerCase(), source: 'contact_section' })}
+							>
 								{contact.value}
 							</a>
 						</div>
@@ -143,6 +151,7 @@
 							target="_blank"
 							rel="noreferrer"
 							class="inline-flex items-center gap-2 hover:text-primary"
+							onclick={() => trackRecruiterAction('contact_social_linkedin', { source: 'contact_section' })}
 						>
 							<Linkedin class="h-4 w-4 text-primary" />
 							LinkedIn
@@ -152,6 +161,7 @@
 							target="_blank"
 							rel="noreferrer"
 							class="inline-flex items-center gap-2 hover:text-primary"
+							onclick={() => trackRecruiterAction('contact_social_github', { source: 'contact_section' })}
 						>
 							<Github class="h-4 w-4 text-primary" />
 							GitHub

@@ -1,5 +1,6 @@
 <script>
 	import Button from '$lib/components/ui/button/button.svelte';
+	import { trackRecruiterAction } from '$lib/recruiter-tools.js';
 	import { Download } from 'lucide-svelte';
 
 	let { pageData } = $props();
@@ -29,7 +30,13 @@
 	</ul>
 
 	{#if pageData.info.resume}
-		<Button target="_blank" href={pageData.info.resume} variant="outline" class="mt-6">
+		<Button
+			target="_blank"
+			href={pageData.info.resume}
+			variant="outline"
+			class="mt-6"
+			onclick={() => trackRecruiterAction('about_resume_download', { source: 'about_section' })}
+		>
 			<Download size={16} />
 			Download Resume
 		</Button>

@@ -1,4 +1,5 @@
 <script>
+	import { downloadTextFile, trackRecruiterAction } from '$lib/recruiter-tools.js';
 	import Seo from '$lib/custom_components/SEO.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { fade } from 'svelte/transition';
@@ -39,6 +40,21 @@
 		{ name: 'Growth', price: 'R1,800 / month', includes: 'Lite + feature iterations and reporting' },
 		{ name: 'Product Partner', price: 'R3,200 / month', includes: 'Growth + priority roadmap support' }
 	];
+
+	const downloadPricingSheet = () => {
+		const lines = [
+			'# Pricing Snapshot (ZAR)',
+			`Generated: ${new Date().toLocaleString()}`,
+			'',
+			'## Project Packages',
+			...packages.map((item) => `- ${item.name}: ${item.price} (${item.timeline})`),
+			'',
+			'## Monthly Retainers',
+			...retainers.map((retainer) => `- ${retainer.name}: ${retainer.price} - ${retainer.includes}`)
+		];
+		const downloaded = downloadTextFile('pricing-snapshot.md', lines.join('\n'));
+		trackRecruiterAction('download_pricing_snapshot', { downloaded, source: 'pricing_page' });
+	};
 </script>
 
 <Seo title="Pricing" desc="South African web development pricing and project packages." />
@@ -142,8 +158,13 @@
 		</div>
 
 		<div class="mt-8 flex flex-wrap gap-3">
-			<Button href="/contact">Request Quote</Button>
-			<Button variant="outline" href="/projects">View Work</Button>
+			<Button href="/contact" onclick={() => trackRecruiterAction('pricing_request_quote', { source: 'pricing_page' })}>
+				Request Quote
+			</Button>
+			<Button variant="outline" href="/projects" onclick={() => trackRecruiterAction('pricing_view_work', { source: 'pricing_page' })}>
+				View Work
+			</Button>
+			<Button variant="outline" onclick={downloadPricingSheet}>Download Pricing Snapshot</Button>
 		</div>
 	</div>
 </section>

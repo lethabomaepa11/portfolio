@@ -3,12 +3,18 @@
 	import { afterNavigate, beforeNavigate, goto, onNavigate } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/button/button.svelte';
+	import Input from '$lib/components/ui/input/input.svelte';
 	import AiChat from '$lib/custom_components/AIChat.svelte';
 	import Footer from '$lib/custom_components/Footer.svelte';
 	import ModeToggle from '$lib/custom_components/ModeToggle.svelte';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
+	import {
+		copyText,
+		getRecruiterMetricsSnapshot,
+		trackRecruiterAction
+	} from '$lib/recruiter-tools.js';
 	import { models, portfolioContext } from '$lib/state.svelte';
-	import { Menu, MousePointer2, X } from 'lucide-svelte';
+	import { Command, Menu, MousePointer2, NotebookPen, X } from 'lucide-svelte';
 	import { ModeWatcher } from 'mode-watcher';
 	import NProgress from 'nprogress';
 	import 'nprogress/nprogress.css';
@@ -22,8 +28,17 @@
 	let showBootOverlay = $state(true);
 	let introMessage = $state('Loading portfolio');
 	let introTone = $state('default');
+	let commandOpen = $state(false);
+	let commandQuery = $state('');
+	let commandIndex = $state(0);
+	let recruiterNotesOpen = $state(false);
+	let recruiterNotes = $state('');
+	let commandFeedback = $state('');
 	let showExitOverlay = $state(false);
 	let exitMessage = $state('Leaving page');
+	let recruiterPromptOpen = $state(false);
+	let recruiterRoleInput = $state('');
+	let recruiterProjectDescription = $state('');
 	let activeSection = $state('about');
 	let navFeedbackVisible = $state(false);
 	let navFeedbackTitle = $state('');
@@ -37,6 +52,11 @@
 	let isExiting = false;
 	let pendingSection = '';
 	let scrollRaf = 0;
+	let commandFeedbackTimer = 0;
+	const recruiterNotesKey = 'recruiter_notes_v1';
+	const recruiterPromptSeenKey = 'recruiter_prompt_seen_v1';
+	const recruiterRoleKey = 'recruiter_role_pref_v1';
+	const recruiterProjectDescriptionKey = 'recruiter_project_desc_v1';
 
 	const links = $state([
 		{ title: 'About', href: '/#about', key: 'about' },
@@ -52,6 +72,10 @@
 	const updateIsMobile = () => {
 		isMobile = new IsMobile().current;
 	};
+
+	const getTypingContext = (target) =>
+		target instanceof Element &&
+		Boolean(target.closest('input, textarea, select, [contenteditable="true"], [role="textbox"]'));
 
 	const normalizeSection = (value) => {
 		const normalized = String(value ?? '')
@@ -191,11 +215,281 @@
 		if ($page.url.pathname !== '/') {
 			pendingSection = targetSection;
 			startNavFeedback(targetSection);
+			trackRecruiterAction('nav_section_jump', { section: targetSection, source: 'menu' });
 			await goto(`/#${targetSection}`);
 			return;
 		}
 
+		trackRecruiterAction('nav_section_jump', { section: targetSection, source: 'menu' });
 		scrollToSection(targetSection);
+	};
+
+	const setCommandFeedback = (message) => {
+		commandFeedback = message;
+		clearTimeout(commandFeedbackTimer);
+		commandFeedbackTimer = setTimeout(() => {
+			commandFeedback = '';
+		}, 1400);
+	};
+
+	const closeCommandPalette = () => {
+		commandOpen = false;
+		commandQuery = '';
+		commandIndex = 0;
+	};
+
+	const openCommandPalette = () => {
+		commandOpen = true;
+		commandQuery = '';
+		commandIndex = 0;
+	};
+
+	const jumpToSection = async (section, source = 'command') => {
+		const normalized = normalizeSection(section) ?? 'about';
+		trackRecruiterAction('nav_section_jump', { section: normalized, source });
+		if ($page.url.pathname !== '/') {
+			pendingSection = normalized;
+			startNavFeedback(normalized);
+			await goto(`/#${normalized}`);
+			return;
+		}
+		scrollToSection(normalized);
+	};
+
+	const openPath = async (path, action) => {
+		trackRecruiterAction(action, { path, source: 'command' });
+		await goto(path);
+	};
+
+	const openAiGeneratedPortfolio = async () => {
+		const role = recruiterRoleInput.trim() || 'Software Engineer';
+		const projectDescription = recruiterProjectDescription.trim();
+		if (browser) {
+			try {
+				localStorage.setItem(recruiterPromptSeenKey, '1');
+				localStorage.setItem(recruiterRoleKey, role);
+				localStorage.setItem(recruiterProjectDescriptionKey, projectDescription);
+			} catch {
+				// no-op
+			}
+		}
+		recruiterPromptOpen = false;
+		trackRecruiterAction('open_ai_generated_portfolio', {
+			role,
+			hasProjectDescription: Boolean(projectDescription),
+			source: 'recruiter_prompt'
+		});
+		const search = new URLSearchParams();
+		search.set('role', role);
+		if (projectDescription) search.set('project_description', projectDescription);
+		await goto(`/ai-portfolio?${search.toString()}`);
+	};
+
+	const dismissRecruiterPrompt = (source = 'dismiss') => {
+		recruiterPromptOpen = false;
+		if (browser) {
+			try {
+				localStorage.setItem(recruiterPromptSeenKey, '1');
+			} catch {
+				// no-op
+			}
+		}
+		trackRecruiterAction('recruiter_prompt_close', { source });
+	};
+
+	const openExternal = (url, action) => {
+		if (!browser || !url) return;
+		trackRecruiterAction(action, { url, source: 'command' });
+		window.open(url, '_blank', 'noopener,noreferrer');
+	};
+
+	const copyValue = async (value, action, okMessage) => {
+		const copied = await copyText(value);
+		trackRecruiterAction(action, { copied, source: 'command' });
+		setCommandFeedback(copied ? okMessage : 'Clipboard unavailable');
+	};
+
+	const encodeShareValue = (value) => {
+		if (!value) return '';
+		try {
+			const bytes = new TextEncoder().encode(value);
+			let binary = '';
+			for (const byte of bytes) binary += String.fromCharCode(byte);
+			return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+		} catch {
+			return '';
+		}
+	};
+
+	const decodeShareValue = (encoded) => {
+		if (!encoded) return '';
+		try {
+			const normalized = encoded.replace(/-/g, '+').replace(/_/g, '/');
+			const padding = '='.repeat((4 - (normalized.length % 4)) % 4);
+			const binary = atob(normalized + padding);
+			const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+			return new TextDecoder().decode(bytes);
+		} catch {
+			return '';
+		}
+	};
+
+	const copyRecruiterNotesShareLink = async (source = 'drawer') => {
+		if (!browser) return;
+		const url = new URL(window.location.href);
+		url.searchParams.delete('recruiter_notes');
+		const encodedNotes = encodeShareValue(recruiterNotes || '');
+		if (encodedNotes) {
+			url.searchParams.set('rn', encodedNotes);
+		} else {
+			url.searchParams.delete('rn');
+		}
+		const role = recruiterRoleInput.trim();
+		url.searchParams.delete('role');
+		if (role) {
+			url.searchParams.set('rr', encodeShareValue(role));
+		} else {
+			url.searchParams.delete('rr');
+		}
+		const projectDescription = recruiterProjectDescription.trim();
+		if (projectDescription) {
+			url.searchParams.set('rpd', encodeShareValue(projectDescription));
+		} else {
+			url.searchParams.delete('rpd');
+		}
+		const copied = await copyText(url.toString());
+		trackRecruiterAction('notes_share_link_copy', { copied, source });
+		setCommandFeedback(copied ? 'Notes share link copied' : 'Clipboard unavailable');
+	};
+
+	const viewMetricsSnapshot = async () => {
+		const snapshot = getRecruiterMetricsSnapshot();
+		const lines = Object.entries(snapshot.counts)
+			.sort((a, b) => b[1] - a[1])
+			.slice(0, 12)
+			.map(([action, count]) => `${action}: ${count}`);
+		const payload = lines.length ? lines.join('\n') : 'No recruiter interactions recorded yet.';
+		await copyValue(payload, 'analytics_snapshot_copy', 'Analytics snapshot copied');
+	};
+
+	const commandActions = $derived.by(() => {
+		const info = data?.data?.info ?? {};
+		const actions = [
+			{ id: 'about', label: 'Jump to About', hint: 'Section', run: () => jumpToSection('about') },
+			{
+				id: 'projects',
+				label: 'Jump to Projects',
+				hint: 'Section',
+				run: () => jumpToSection('projects')
+			},
+			{ id: 'skills', label: 'Jump to Skills', hint: 'Section', run: () => jumpToSection('skills') },
+			{
+				id: 'experience',
+				label: 'Jump to Experience',
+				hint: 'Section',
+				run: () => jumpToSection('experience')
+			},
+			{
+				id: 'services',
+				label: 'Jump to Services',
+				hint: 'Section',
+				run: () => jumpToSection('services')
+			},
+			{ id: 'pricing', label: 'Jump to Pricing', hint: 'Section', run: () => jumpToSection('pricing') },
+			{ id: 'contact', label: 'Jump to Contact', hint: 'Section', run: () => jumpToSection('contact') },
+			{
+				id: 'projects-page',
+				label: 'Open Full Projects Page',
+				hint: 'Route',
+				run: () => openPath('/projects', 'open_projects_page')
+			},
+			{
+				id: 'pricing-page',
+				label: 'Open Full Pricing Page',
+				hint: 'Route',
+				run: () => openPath('/pricing', 'open_pricing_page')
+			},
+			{
+				id: 'notes',
+				label: recruiterNotesOpen ? 'Close Recruiter Notes' : 'Open Recruiter Notes',
+				hint: 'Tool',
+				run: () => {
+					recruiterNotesOpen = !recruiterNotesOpen;
+					trackRecruiterAction('notes_toggle', { open: recruiterNotesOpen, source: 'command' });
+				}
+			},
+			{
+				id: 'metrics',
+				label: 'Copy Recruiter Analytics Snapshot',
+				hint: 'Analytics',
+				run: viewMetricsSnapshot
+			},
+			{
+				id: 'ai-portfolio',
+				label: 'Open AI Generated Portfolio',
+				hint: 'Recruiter',
+				run: openAiGeneratedPortfolio
+			},
+			{
+				id: 'notes-share',
+				label: 'Copy Recruiter Notes Share Link',
+				hint: 'Tool',
+				run: () => copyRecruiterNotesShareLink('command')
+			}
+		];
+
+		if (info?.email) {
+			actions.push({
+				id: 'copy-email',
+				label: 'Copy Email Address',
+				hint: 'Clipboard',
+				run: () => copyValue(info.email, 'copy_email', 'Email copied')
+			});
+		}
+
+		if (info?.linkedin) {
+			actions.push({
+				id: 'copy-linkedin',
+				label: 'Copy LinkedIn URL',
+				hint: 'Clipboard',
+				run: () => copyValue(info.linkedin, 'copy_linkedin', 'LinkedIn copied')
+			});
+		}
+
+		if (info?.github) {
+			actions.push({
+				id: 'github-profile',
+				label: 'Open GitHub Profile',
+				hint: 'Profile',
+				run: () => openExternal(info.github, 'open_github_profile')
+			});
+		}
+
+		if (info?.resume) {
+			actions.push({
+				id: 'copy-resume',
+				label: 'Copy Resume URL',
+				hint: 'Clipboard',
+				run: () => copyValue(info.resume, 'copy_resume', 'Resume link copied')
+			});
+		}
+
+		return actions;
+	});
+
+	const filteredCommands = $derived.by(() => {
+		const term = commandQuery.trim().toLowerCase();
+		if (!term) return commandActions;
+		return commandActions.filter(
+			(command) =>
+				command.label.toLowerCase().includes(term) || command.hint.toLowerCase().includes(term)
+		);
+	});
+
+	const runCommand = async (command) => {
+		if (!command) return;
+		await command.run();
+		closeCommandPalette();
 	};
 
 	const getModels = async () => {
@@ -272,6 +566,47 @@
 	});
 
 	$effect(() => {
+		if (browser) {
+			try {
+				localStorage.setItem(recruiterNotesKey, recruiterNotes);
+			} catch {
+				// no-op
+			}
+		}
+	});
+
+	$effect(() => {
+		if (browser) {
+			try {
+				localStorage.setItem(recruiterRoleKey, recruiterRoleInput || '');
+			} catch {
+				// no-op
+			}
+		}
+	});
+
+	$effect(() => {
+		if (browser) {
+			try {
+				localStorage.setItem(recruiterProjectDescriptionKey, recruiterProjectDescription || '');
+			} catch {
+				// no-op
+			}
+		}
+	});
+
+	$effect(() => {
+		if (!commandOpen) return;
+		if (!filteredCommands.length) {
+			commandIndex = 0;
+			return;
+		}
+		if (commandIndex >= filteredCommands.length) {
+			commandIndex = 0;
+		}
+	});
+
+	$effect(() => {
 		portfolioContext.info = data.data;
 	});
 
@@ -283,6 +618,51 @@
 
 		const handleKeydown = (event) => {
 			const key = event.key?.toLowerCase();
+			const isTyping = getTypingContext(event.target);
+			if ((event.ctrlKey || event.metaKey) && key === 'k') {
+				event.preventDefault();
+				if (commandOpen) {
+					closeCommandPalette();
+				} else {
+					openCommandPalette();
+					trackRecruiterAction('open_command_palette', { source: 'keyboard' });
+				}
+				return;
+			}
+			if (!isTyping && !event.ctrlKey && !event.metaKey && !event.altKey && key === '/') {
+				event.preventDefault();
+				openCommandPalette();
+				trackRecruiterAction('open_command_palette', { source: 'slash' });
+				return;
+			}
+			if (commandOpen) {
+				if (event.key === 'Escape') {
+					event.preventDefault();
+					closeCommandPalette();
+					return;
+				}
+				if (event.key === 'ArrowDown') {
+					event.preventDefault();
+					commandIndex = filteredCommands.length
+						? (commandIndex + 1) % filteredCommands.length
+						: 0;
+					return;
+				}
+				if (event.key === 'ArrowUp') {
+					event.preventDefault();
+					commandIndex = filteredCommands.length
+						? (commandIndex - 1 + filteredCommands.length) % filteredCommands.length
+						: 0;
+					return;
+				}
+				if (event.key === 'Enter') {
+					event.preventDefault();
+					if (!filteredCommands.length) return;
+					runCommand(filteredCommands[commandIndex]);
+					return;
+				}
+			}
+
 			if (event.key === 'F5' || ((event.ctrlKey || event.metaKey) && key === 'r')) {
 				reloadIntent = true;
 				event.preventDefault();
@@ -362,6 +742,46 @@
 		isLoading = false;
 		showBootOverlay = false;
 		updateTimelineMetrics();
+		try {
+			recruiterNotes = localStorage.getItem(recruiterNotesKey) ?? '';
+			recruiterRoleInput = localStorage.getItem(recruiterRoleKey) ?? '';
+			recruiterProjectDescription = localStorage.getItem(recruiterProjectDescriptionKey) ?? '';
+		} catch {
+			recruiterNotes = '';
+			recruiterRoleInput = '';
+			recruiterProjectDescription = '';
+		}
+
+		const currentUrl = new URL(window.location.href);
+		const encodedNotes = currentUrl.searchParams.get('rn');
+		const sharedNotes = encodedNotes
+			? decodeShareValue(encodedNotes)
+			: currentUrl.searchParams.get('recruiter_notes');
+		if (sharedNotes) {
+			recruiterNotes = sharedNotes.slice(0, 8000);
+			recruiterNotesOpen = true;
+			trackRecruiterAction('notes_share_link_open', { source: 'url' });
+		}
+		const encodedRole = currentUrl.searchParams.get('rr');
+		const sharedRole = encodedRole ? decodeShareValue(encodedRole) : currentUrl.searchParams.get('role');
+		if (sharedRole) {
+			recruiterRoleInput = sharedRole.slice(0, 100);
+		}
+		const encodedProjectDescription = currentUrl.searchParams.get('rpd');
+		const sharedProjectDescription = encodedProjectDescription
+			? decodeShareValue(encodedProjectDescription)
+			: currentUrl.searchParams.get('project_description');
+		if (sharedProjectDescription) {
+			recruiterProjectDescription = sharedProjectDescription.slice(0, 1200);
+		}
+
+		const savedPromptState = localStorage.getItem(recruiterPromptSeenKey) === '1';
+		if ($page.url.pathname === '/' && !savedPromptState) {
+			window.setTimeout(() => {
+				recruiterPromptOpen = true;
+				trackRecruiterAction('recruiter_prompt_open', { source: 'auto' });
+			}, 1200);
+		}
 
 		const initialSection = getSectionFromHash(window.location.hash);
 		if (initialSection) {
@@ -385,6 +805,7 @@
 				document.removeEventListener('mouseenter', handleMouseEnter);
 			}
 			stopNavFeedback();
+			clearTimeout(commandFeedbackTimer);
 		};
 	});
 
@@ -424,9 +845,25 @@
 						{item.title}
 					</a>
 				{/each}
+				<a
+					href="/ai-portfolio"
+					onclick={() => trackRecruiterAction('open_ai_generated_portfolio', { source: 'header_link' })}
+					class="rounded-md border border-primary/30 px-3 py-2 text-sm text-primary transition-colors hover:bg-primary/10"
+				>
+					AI Portfolio
+				</a>
 			</nav>
 
 			<div class="flex items-center gap-2">
+				<Button
+					variant="outline"
+					size="sm"
+					href="/ai-portfolio"
+					class="hidden md:inline-flex lg:hidden"
+					onclick={() => trackRecruiterAction('open_ai_generated_portfolio', { source: 'header_button' })}
+				>
+					AI Portfolio
+				</Button>
 				<ModeToggle />
 				{#if isMobile}
 					<Button
@@ -460,6 +897,16 @@
 						{item.title}
 					</a>
 				{/each}
+				<a
+					href="/ai-portfolio"
+					onclick={() => {
+						showMenu = false;
+						trackRecruiterAction('open_ai_generated_portfolio', { source: 'mobile_menu' });
+					}}
+					class="rounded-lg border border-primary/30 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+				>
+					AI Portfolio
+				</a>
 			</nav>
 		</div>
 	{/if}
@@ -469,6 +916,90 @@
 			<div class="rounded-full border border-primary/35 bg-card/90 px-4 py-2 shadow-xl backdrop-blur">
 				<p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary/80">Routing</p>
 				<p class="text-sm font-semibold text-foreground">Scrolling to {navFeedbackTitle}</p>
+			</div>
+		</div>
+	{/if}
+
+	{#if commandOpen}
+		<div class="fixed inset-0 z-[82] bg-black/45 backdrop-blur-sm" role="presentation" onclick={closeCommandPalette}>
+			<div
+				class="mx-auto mt-20 w-[min(680px,92vw)] rounded-xl border border-white/10 bg-card/96 p-3 shadow-2xl"
+				role="dialog"
+				aria-modal="true"
+				onclick={(event) => event.stopPropagation()}
+			>
+				<div class="flex items-center gap-2 border-b border-white/10 pb-2">
+					<Command size={15} class="text-primary" />
+					<Input
+						placeholder="Jump to section, open route, copy contact..."
+						bind:value={commandQuery}
+						class="border-0 bg-transparent p-0 text-sm focus-visible:ring-0"
+					/>
+				</div>
+				<div class="mt-2 max-h-[52vh] space-y-1 overflow-auto">
+					{#if filteredCommands.length === 0}
+						<p class="px-2 py-2 text-sm text-muted-foreground">No matching command.</p>
+					{:else}
+						{#each filteredCommands as command, index (command.id)}
+							<button
+								type="button"
+								class="flex w-full items-center justify-between rounded-md border border-transparent px-2 py-2 text-left text-sm transition-colors {commandIndex === index
+									? 'border-primary/40 bg-primary/12 text-primary'
+									: 'text-foreground hover:bg-white/5'}"
+								onmouseenter={() => (commandIndex = index)}
+								onclick={() => runCommand(command)}
+							>
+								<span>{command.label}</span>
+								<span class="text-xs text-muted-foreground">{command.hint}</span>
+							</button>
+						{/each}
+					{/if}
+				</div>
+				<p class="mt-3 text-xs text-muted-foreground">Press <kbd>Enter</kbd> to run, <kbd>Esc</kbd> to close.</p>
+			</div>
+		</div>
+	{/if}
+
+	{#if commandFeedback}
+		<div class="pointer-events-none fixed left-1/2 top-4 z-[83] -translate-x-1/2 rounded-full border border-primary/30 bg-card/90 px-3 py-1 text-xs text-primary shadow-lg">
+			{commandFeedback}
+		</div>
+	{/if}
+
+	{#if recruiterPromptOpen}
+		<div class="fixed inset-0 z-[81] grid place-items-center bg-black/60 p-4 backdrop-blur-sm">
+			<div class="w-[min(520px,95vw)] rounded-xl border border-white/10 bg-card/95 p-4 shadow-2xl">
+				<p class="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Experimental</p>
+				<h2 class="mt-2 text-lg font-semibold">Recruiter assistant mode</h2>
+				<p class="mt-2 text-sm text-muted-foreground">
+					If you are hiring, enter the role title to open an AI-generated role-fit portfolio page.
+				</p>
+				<div class="mt-3">
+					<label for="recruiter-role" class="mb-1 block text-sm font-medium">Job role</label>
+					<Input
+						id="recruiter-role"
+						placeholder="e.g., Full-Stack Software Engineer"
+						bind:value={recruiterRoleInput}
+					/>
+				</div>
+				<details class="mt-3 rounded-md border border-white/10 bg-background/60 p-2">
+					<summary class="cursor-pointer text-sm font-medium">Project description (optional)</summary>
+					<div class="mt-2">
+						<textarea
+							id="recruiter-project-description"
+							rows="4"
+							bind:value={recruiterProjectDescription}
+							class="w-full resize-y rounded-md border border-white/10 bg-background px-3 py-2 text-sm"
+							placeholder="Paste a short role or project description for a better role-fit AI portfolio."
+						></textarea>
+					</div>
+				</details>
+				<div class="mt-4 flex flex-wrap justify-end gap-2">
+					<Button variant="outline" onclick={() => dismissRecruiterPrompt('not_recruiter')}>
+						Not now
+					</Button>
+					<Button onclick={openAiGeneratedPortfolio}>Open AI Portfolio</Button>
+				</div>
 			</div>
 		</div>
 	{/if}
@@ -486,7 +1017,10 @@
 						style={`top: ${point.position}%;`}
 						title={point.title}
 						aria-label={`Jump to ${point.title}`}
-						onclick={() => scrollToSection(point.key)}
+						onclick={() => {
+							trackRecruiterAction('timeline_point_click', { section: point.key });
+							scrollToSection(point.key);
+						}}
 					>
 						<span class="section-timeline__label" aria-hidden="true">
 							{point.title}
@@ -518,6 +1052,51 @@
 			{/if}
 		</div>
 	{/if}
+
+	<div class="fixed bottom-4 left-4 z-[71]">
+		{#if recruiterNotesOpen}
+			<div class="w-[min(360px,90vw)] rounded-xl border border-white/10 bg-card/95 p-3 shadow-2xl backdrop-blur">
+				<div class="mb-2 flex items-center justify-between">
+					<p class="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Recruiter Notes</p>
+					<button
+						type="button"
+						class="rounded p-1 text-muted-foreground hover:text-foreground"
+						onclick={() => {
+							recruiterNotesOpen = false;
+							trackRecruiterAction('notes_toggle', { open: false, source: 'drawer' });
+						}}
+						aria-label="Close recruiter notes"
+					>
+						<X size={14} />
+					</button>
+				</div>
+				<textarea
+					bind:value={recruiterNotes}
+					rows="8"
+					class="w-full resize-y rounded-md border border-white/10 bg-background p-2 text-sm text-foreground"
+					placeholder="Jot role fit notes, interview questions, and next-step reminders..."
+				></textarea>
+				<div class="mt-2 flex flex-wrap gap-2">
+					<Button size="sm" variant="outline" onclick={() => copyRecruiterNotesShareLink('drawer')}>
+						Copy share link
+					</Button>
+				</div>
+				<p class="mt-2 text-[11px] text-muted-foreground">Saved locally in your browser.</p>
+			</div>
+		{:else}
+			<Button
+				variant="outline"
+				size="sm"
+				onclick={() => {
+					recruiterNotesOpen = true;
+					trackRecruiterAction('notes_toggle', { open: true, source: 'drawer' });
+				}}
+			>
+				<NotebookPen size={14} />
+				Notes
+			</Button>
+		{/if}
+	</div>
 
 	<main class="section-wrap min-h-[70vh] py-10 md:py-12">
 		{@render children()}

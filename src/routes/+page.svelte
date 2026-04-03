@@ -1,28 +1,40 @@
 <script>
 	import Button from '$lib/components/ui/button/button.svelte';
-	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import About from '$lib/pages/About.svelte';
 	import Contact from '$lib/pages/Contact.svelte';
 	import Experience from '$lib/pages/Experience.svelte';
 	import Services from '$lib/pages/Services.svelte';
 	import Skills from '$lib/pages/Skills.svelte';
 	import Seo from '$lib/custom_components/SEO.svelte';
+	import { trackRecruiterAction } from '$lib/recruiter-tools.js';
 	import { portfolioContext } from '$lib/state.svelte';
-	import { ArrowRight, Github, Linkedin, Mail, Download } from 'lucide-svelte';
-	import { onMount } from 'svelte';
+	import { ArrowRight, Download, Github, Linkedin, Mail } from 'lucide-svelte';
 	import { fade } from 'svelte/transition';
-	import ProjectsPage from './projects/+page.svelte';
 
 	let { data } = $props();
-	let isMobile = $state(false);
-
-	const updateIsMobile = () => {
-		isMobile = new IsMobile().current;
-	};
 
 	const featuredProjects = $derived((data.data.projects ?? []).slice(0, 3));
+	const totalProjects = $derived((data.data.projects ?? []).length);
+	const uniqueTechCount = $derived.by(() => {
+		const stack = new Set();
+		for (const project of data.data.projects ?? []) {
+			for (const tech of project.technologies ?? []) {
+				stack.add(tech);
+			}
+		}
+		return stack.size;
+	});
 	const pricingPlans = $derived(portfolioContext.pricing ?? []);
 	const githubAvatar = 'https://avatars.githubusercontent.com/u/129387924?v=4';
+	const fitSnapshotItems = $derived.by(() => {
+		const experienceCount = portfolioContext.experience?.length ?? 0;
+		return [
+			{ label: 'Shipped Projects', value: String(totalProjects), note: 'Case studies available' },
+			{ label: 'Stack Breadth', value: `${uniqueTechCount}+`, note: 'Technologies across projects' },
+			{ label: 'Career Highlights', value: String(experienceCount), note: 'Recent milestones and roles' },
+			{ label: 'Pricing Clarity', value: '3 bands', note: 'Transparent scope-to-budget ranges' }
+		];
+	});
 	const recruiterSignals = [
 		'Currently employed; available for selective projects and strategic collaborations.',
 		'Shipped projects with source code and live demos',
@@ -30,12 +42,18 @@
 		'Strong foundation in SvelteKit, JavaScript/TypeScript, and APIs',
 		'Transparent South African project pricing with clear scope bands'
 	];
+	const projectEvidenceTags = (project) => {
+		const tags = ['Case Study'];
+		if (project.demoUrl?.startsWith('https://')) tags.push('Live Demo');
+		if (project.githubUrl?.startsWith('https://')) tags.push('GitHub');
+		if (project.technologies?.length) tags.push(`${project.technologies.length} technologies`);
+		return tags;
+	};
 
-	onMount(() => {
-		updateIsMobile();
-		window.addEventListener('resize', updateIsMobile);
-		return () => window.removeEventListener('resize', updateIsMobile);
-	});
+	const trackCta = (action, meta = {}) => {
+		trackRecruiterAction(action, { source: 'home', ...meta });
+	};
+
 </script>
 
 <Seo
@@ -67,11 +85,30 @@
 		</div>
 
 		<div class="mt-6 flex flex-wrap gap-3">
-			<Button href="/projects">View Projects</Button>
-			<Button href="/#contact" variant="outline">Contact Me</Button>
-			<Button href="/pricing" variant="outline">Pricing</Button>
+			<Button href="/projects" onclick={() => trackCta('hero_view_projects')}>View Projects</Button>
+			<Button
+				href={data.data.info.github}
+				target="_blank"
+				rel="noreferrer"
+				variant="outline"
+				onclick={() => trackCta('hero_github_profile')}
+			>
+				<Github size={15} />
+				GitHub Profile
+			</Button>
+			<Button href="/#contact" variant="outline" onclick={() => trackCta('hero_contact')}>
+				Contact Me
+			</Button>
+			<Button href="/pricing" variant="outline" onclick={() => trackCta('hero_pricing')}>
+				Pricing
+			</Button>
 			{#if data.data.info.resume}
-				<Button href={data.data.info.resume} target="_blank" variant="outline">
+				<Button
+					href={data.data.info.resume}
+					target="_blank"
+					variant="outline"
+					onclick={() => trackCta('hero_resume')}
+				>
 					<Download size={15} />
 					Resume
 				</Button>
@@ -84,6 +121,7 @@
 				target="_blank"
 				rel="noreferrer"
 				class="inline-flex items-center gap-2 hover:text-primary"
+				onclick={() => trackCta('social_linkedin')}
 			>
 				<Linkedin size={16} />
 				LinkedIn
@@ -93,6 +131,7 @@
 				target="_blank"
 				rel="noreferrer"
 				class="inline-flex items-center gap-2 hover:text-primary"
+				onclick={() => trackCta('social_github')}
 			>
 				<Github size={16} />
 				GitHub
@@ -100,6 +139,7 @@
 			<a
 				href={`mailto:${data.data.info.email}`}
 				class="inline-flex items-center gap-2 hover:text-primary"
+				onclick={() => trackCta('social_email')}
 			>
 				<Mail size={16} />
 				Email
@@ -108,7 +148,28 @@
 	</div>
 </section>
 
-<section class="border-t border-white/10 py-8" in:fade={{ duration: 240, delay: 80 }}>
+<section id="projects" class="border-t border-white/10 py-8" in:fade={{ duration: 240, delay: 80 }}>
+	<div class="panel mb-6">
+		<p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Role Fit Snapshot</p>
+		<div class="mt-4 grid gap-3 md:grid-cols-4">
+			{#each fitSnapshotItems as item (item.label)}
+				<article class="item-card">
+					<p class="text-xs uppercase tracking-[0.12em] text-muted-foreground">{item.label}</p>
+					<p class="mt-2 text-2xl font-bold text-primary">{item.value}</p>
+					<p class="mt-1 text-xs text-muted-foreground">{item.note}</p>
+				</article>
+			{/each}
+		</div>
+		<div class="mt-4 flex flex-wrap gap-3">
+			<Button href="/projects" variant="outline" onclick={() => trackCta('fit_open_projects')}>
+				Review Projects
+			</Button>
+			<Button href="/pricing" variant="outline" onclick={() => trackCta('fit_open_pricing')}>
+				View Pricing
+			</Button>
+		</div>
+	</div>
+
 	<div class="panel mb-6">
 		<p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Recruiter Snapshot</p>
 		<ul class="mt-4 grid gap-2 md:grid-cols-2">
@@ -121,7 +182,9 @@
 	<div class="panel">
 		<div class="flex items-center justify-between gap-3">
 			<h2 class="text-xl font-semibold md:text-2xl">Featured Projects</h2>
-			<Button variant="outline" href="/projects">All Projects</Button>
+			<Button variant="outline" href="/projects" onclick={() => trackCta('featured_all_projects')}>
+				All Projects
+			</Button>
 		</div>
 
 		<div class="mt-5 space-y-3">
@@ -129,6 +192,15 @@
 				<a href={`/projects/${project.slug}`} class="item-card block">
 					<p class="text-base font-semibold">{project.title}</p>
 					<p class="mt-1 text-sm text-muted-foreground">{project.description}</p>
+					<div class="mt-3 flex flex-wrap gap-1.5">
+						{#each projectEvidenceTags(project) as tag (tag)}
+							<span
+								class="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-primary"
+							>
+								{tag}
+							</span>
+						{/each}
+					</div>
 					<p class="mt-2 inline-flex items-center gap-1 text-sm text-primary">
 						Read Case Study
 						<ArrowRight size={14} />
@@ -145,7 +217,6 @@
 	</div>
 </section>
 
-<ProjectsPage data={{ projects: data.data.projects }} />
 <Skills pageData={data.data} />
 <Experience />
 <Services />
@@ -168,9 +239,13 @@
 			{/each}
 		</div>
 		<div class="mt-6 flex flex-wrap gap-3">
-			<Button href="/#contact">Request Quote</Button>
-			<Button variant="outline" href="/pricing">Full Pricing</Button>
-			<Button variant="outline" href="/projects">Full Projects</Button>
+			<Button href="/#contact" onclick={() => trackCta('pricing_request_quote')}>Request Quote</Button>
+			<Button variant="outline" href="/pricing" onclick={() => trackCta('pricing_full_pricing')}>
+				Full Pricing
+			</Button>
+			<Button variant="outline" href="/projects" onclick={() => trackCta('pricing_full_projects')}>
+				Full Projects
+			</Button>
 		</div>
 	</div>
 </section>
