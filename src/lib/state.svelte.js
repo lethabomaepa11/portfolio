@@ -8,9 +8,53 @@ export let models = $state({
 	data: [],
 	question: '',
 	context: '',
+	maxPromptChars: 10500,
+	sanitizeText: (value, max = 280) => {
+		if (typeof value !== 'string') return '';
+		return value.replace(/\s+/g, ' ').replace(/<[^>]*>/g, '').trim().slice(0, max);
+	},
+	contextSummary: () => {
+		const ctx = portfolioContext?.info ?? {};
+		const info = ctx?.info ?? {};
+		const skills = Array.isArray(ctx?.skills) ? ctx.skills : [];
+		const projects = Array.isArray(ctx?.projects) ? ctx.projects : [];
+
+		const topSkills = skills.slice(0, 8).map((skill) => {
+			const name = models.sanitizeText(skill?.title || skill?.name || '', 40);
+			const level = Number(skill?.level) ? `${skill.level}%` : '';
+			return [name, level].filter(Boolean).join(' ');
+		});
+
+		const topProjects = projects.slice(0, 6).map((project) => ({
+			title: models.sanitizeText(project?.title || '', 70),
+			slug: models.sanitizeText(project?.slug || '', 60),
+			stack: models.sanitizeText(project?.tools || project?.tech_stack || '', 90),
+			outcome: models.sanitizeText(project?.description || project?.summary || '', 180)
+		}));
+
+		return {
+			profile: {
+				name: models.sanitizeText(info?.name || 'Lethabo Maepa', 50),
+				title: models.sanitizeText(info?.title || info?.role || 'Software Developer', 80),
+				location: models.sanitizeText(info?.location || 'South Africa', 60),
+				email: models.sanitizeText(info?.email || '', 80)
+			},
+			topSkills,
+			topProjects,
+			pricing: portfolioContext.pricing
+		};
+	},
+	compactPrompt: (rawPrompt) => {
+		if (typeof rawPrompt !== 'string') return '';
+		const compact = rawPrompt.replace(/\s+/g, ' ').trim();
+		if (compact.length <= models.maxPromptChars) return compact;
+		const head = compact.slice(0, 7200);
+		const tail = compact.slice(-2500);
+		return `${head}\n...[prompt truncated for token safety]...\n${tail}`;
+	},
 	promptMessage: () => {
 		try {
-			return `You are Ask AI, the assistant for Lethabo Maepa's portfolio.
+			const composedPrompt = `You are Ask AI, the assistant for Lethabo Maepa's portfolio.
       Your job is to help recruiters and clients quickly evaluate fit.
       Rules:
       - Use the provided context first and stay factual.
@@ -20,7 +64,9 @@ export let models = $state({
       - Prefer bullet points for summaries and comparisons.
       \n${models.redirectRule()}\n
       Question: ${models.question || 'No question provided'}
-      Context: ${JSON.stringify(portfolioContext || {}, null, 2)}`;
+      Context: ${JSON.stringify(models.contextSummary())}`;
+
+			return models.compactPrompt(composedPrompt);
 		} catch (error) {
 			console.error('Error in promptMessage:', error);
 			return 'Error generating prompt. Please try again.';

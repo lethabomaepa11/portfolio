@@ -30,11 +30,25 @@
 	});
 
 	const quickPrompts = [
-		'Summarize candidate fit for a graduate frontend developer role.',
+		'Summarize candidate fit for a software developer role.',
 		'Which project should a recruiter open first, and why?',
 		'What is the pricing range and what affects scope?',
 		'Draft a short recruiter outreach message for interview invitation.'
 	];
+
+	const summarizeHistory = (history) => {
+		const recentTurns = history.slice(-6);
+		return recentTurns
+			.map((entry) => {
+				const sender = entry?.sender === 'assistant' ? 'assistant' : 'user';
+				const text = String(entry?.message ?? '')
+					.replace(/\s+/g, ' ')
+					.trim()
+					.slice(0, 260);
+				return `${sender}: ${text}`;
+			})
+			.join('\n');
+	};
 
 	const handleChatStateChange = (state) => {
 		chat.state = state;
@@ -91,10 +105,13 @@
 
 		models.question =
 			prompt.trim() +
-			`\nCurrent page: ${page.url.pathname}\nChat history: ${JSON.stringify(messages)}`;
+			`\nCurrent page: ${page.url.pathname}\nRecent chat turns:\n${summarizeHistory(messages)}`;
 
 		const chatRes = await fetch('/api/ai', {
 			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
 			body: JSON.stringify({ message: encrypt(models.promptMessage()) })
 		});
 		const response = await chatRes.json();

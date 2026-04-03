@@ -21,7 +21,7 @@
 
 	const featuredProjects = $derived((data.data.projects ?? []).slice(0, 3));
 	const recruiterSignals = [
-		'Open to Graduate / Junior Software Developer roles',
+		'Currently employed; open to selective, high-impact opportunities',
 		'Shipped projects with source code and live demos',
 		'Clear case studies explaining problem-solving approach',
 		'Strong foundation in SvelteKit, JavaScript/TypeScript, and APIs',
@@ -37,18 +37,18 @@
 
 <Seo
 	title="Portfolio"
-	desc={data?.data?.info?.headline || 'Graduate developer building practical web products.'}
+	desc="Software developer currently employed and open to selective full-time opportunities and high-impact collaborations."
 />
 
 <section class="py-6 md:py-10" in:fade={{ duration: 240 }}>
 	<div class="panel">
-		<p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Graduate Developer</p>
+		<p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Software Developer</p>
 		<h1 class="mt-3 max-w-3xl text-3xl font-bold leading-tight md:text-5xl">
 			Lethabo Maepa
 		</h1>
 		<p class="mt-4 max-w-3xl text-base text-muted-foreground md:text-lg">{data.data.info.headline}</p>
 		<p class="mt-2 text-sm text-primary">
-			Actively seeking graduate-level software engineering opportunities.
+			Currently employed and available for selective projects and strategic collaborations.
 		</p>
 
 		<div class="mt-6 flex flex-wrap gap-3">

@@ -9,7 +9,11 @@
 		langs = ['en-ZA', 'en-US']
 	} = $props();
 
-	const metaDescription = $derived(desc || description || 'Portfolio website');
+	const metaDescription = $derived(
+		desc ||
+			description ||
+			'Software developer currently employed and open to selective full-time opportunities and high-impact collaborations.'
+	);
 
 	const iso15924to31661 = (lang) => {
 		if (lang === 'zh_hans') return 'zh-cn';

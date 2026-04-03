@@ -5,7 +5,7 @@
 	let { pageData } = $props();
 
 	const highlights = [
-		'Graduate developer with hands-on product delivery experience',
+		'Software developer with hands-on product delivery experience',
 		'Strong frontend foundation with practical full-stack capability',
 		'Focused on clean implementation, performance, and maintainability'
 	];
@@ -15,7 +15,9 @@
 	<p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">About</p>
 	<h2 class="mt-2 text-2xl font-bold md:text-3xl">Profile</h2>
 	<p class="mt-4 max-w-3xl leading-relaxed text-muted-foreground">{pageData.info.about}</p>
-	<p class="mt-3 text-sm text-primary">Open to graduate and junior developer opportunities.</p>
+	<p class="mt-3 text-sm text-primary">
+		Currently employed and open to selective collaborations and high-impact opportunities.
+	</p>
 
 	<ul class="mt-5 space-y-2 text-sm text-muted-foreground">
 		{#each highlights as item}

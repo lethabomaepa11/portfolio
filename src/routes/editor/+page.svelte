@@ -19,6 +19,7 @@
 		LogOut
 	} from 'lucide-svelte';
 	import { onMount } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
 	import { auth } from '$lib/state.svelte.js';
 	import { goto } from '$app/navigation';
 	let { data } = $props();
@@ -106,8 +107,8 @@
 	<Loading />
 {/if}
 
-<div class="container mx-auto p-6">
-	<h1 class="mb-6 text-3xl font-bold">My Portfolio Editor</h1>
+<div class="editor-page-shell container mx-auto p-6">
+	<h1 class="editor-title-glow mb-6 text-3xl font-bold">My Portfolio Editor</h1>
 
 	<div>
 		<div
@@ -150,167 +151,169 @@
 			</Button>
 		</div>
 
-		{#if activeTab === 'home' && !isLoading}
-			<form
-				enctype="multipart/form-data"
-				onsubmit={updateInfo}
-				class="mb-20 flex flex-col gap-4 p-4"
-			>
-				<div>
-					<label for="about">About</label>
-					<textarea
-						id="about"
-						class="w-full rounded border bg-background p-2"
-						placeholder="About"
-						bind:value={aboutInfo.about}
-					></textarea>
-				</div>
-				<div>
-					<label for="headline">Headline</label>
-					<input
-						id="headline"
-						class="w-full rounded border bg-background p-2"
-						placeholder="Headline"
-						bind:value={aboutInfo.headline}
-					/>
-				</div>
-				<div class="">
-					<label for="resume">Upload New Resume PDF</label>
-					<input
-						onchange={(e) => {
-							aboutInfo.resume = e.target.files[0];
-						}}
-						id="resume"
-						class="w-full rounded border bg-background"
-						type="file"
-					/>
-				</div>
-				<Button type="submit" class="mt-4"><Save class="mr-2" /> Update Info</Button>
-			</form>
-		{:else if activeTab === 'projects' && !isLoading}
-			<div class="mb-20 p-4">
-				<div class="mb-4 flex justify-between">
-					<h2 class="text-xl font-semibold">Manage Projects</h2>
-					<Button
-						onclick={() => {
-							goto('/editor/project');
-						}}
+		{#key activeTab}
+			<section class="editor-tab-stage" in:fly={{ y: 24, duration: 340 }} out:fade={{ duration: 180 }}>
+				{#if activeTab === 'home' && !isLoading}
+					<form
+						enctype="multipart/form-data"
+						onsubmit={updateInfo}
+						class="mb-20 flex flex-col gap-4 p-4"
 					>
-						<Plus class="mr-2" /> Add Project
-					</Button>
-				</div>
-
-				<div class="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-					{#each projects as project}
-						<div
-							class="rounded-xl bg-gray-800 p-6 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-						>
-							<div class="mb-4 flex justify-between">
-								<Button
-									onclick={() => {
-										let projectData = {
-											state: true,
-											type: 'edit',
-											project: { ...project, image: '' }
-										};
-										localStorage.setItem('projectData', JSON.stringify(projectData));
-										goto('/editor/project');
-									}}><Edit class="mr-2" /></Button
-								>
-								<Button onclick={() => deleteProject(project.id)}><Trash class="mr-2" /></Button>
-							</div>
-							<img
-								src={project.image}
-								alt={project.title}
-								class="mx-auto mb-4 h-48 w-full rounded-lg opacity-80"
-							/>
-							<h2 class=" text-2xl font-semibold text-white">{project.title}</h2>
-							<p class="mt-2 line-clamp-3 max-w-full break-words text-gray-400">
-								{project.description}
-							</p>
-							<span class="mt-2 space-x-2 text-center text-gray-400">
-								{#each project.technologies as tech}
-									<span class="inline-block rounded-2xl bg-gray-700 px-2 py-1 text-xs">{tech}</span>
-								{/each}
-							</span>
-							<div class="mt-6 flex justify-between">
-								<a
-									href={project.githubUrl}
-									class="text-lg font-medium text-blue-400 transition hover:text-blue-300"
-									target="_blank">GitHub</a
-								>
-								{#if project.demoUrl}
-									<a
-										href={project.demoUrl}
-										class="rounded-lg bg-blue-500 px-5 py-2 text-lg font-bold text-white shadow-lg transition hover:bg-blue-600"
-										target="_blank">Live Demo</a
-									>
-								{/if}
-							</div>
+						<div>
+							<label for="about">About</label>
+							<textarea
+								id="about"
+								class="w-full rounded border bg-background p-2"
+								placeholder="About"
+								bind:value={aboutInfo.about}
+							></textarea>
 						</div>
-					{/each}
-				</div>
-			</div>
-		{:else if activeTab === 'skills' && !isLoading}
-			<!-- Skills Tab -->
-			<div class="mb-20 p-4">
-				<div class="mb-4 flex gap-2">
-					<input bind:value={newSkill} class="flex-1 rounded border p-2" placeholder="New skill" />
-					<Button
-						onclick={() => {
-							skills = [...skills, newSkill];
-							newSkill = '';
-						}}
-					>
-						<Plus class="mr-2" /> Add Skill
-					</Button>
-				</div>
-				<div class="flex flex-wrap gap-2">
-					{#each skills as skill}
-						<div class="flex items-center rounded-full bg-background px-3 py-1 text-blue-800">
-							{skill}
-							<Trash
-								size={14}
-								class="ml-2 cursor-pointer hover:text-blue-600"
-								onclick={() => (skills = skills.filter((s) => s !== skill))}
+						<div>
+							<label for="headline">Headline</label>
+							<input
+								id="headline"
+								class="w-full rounded border bg-background p-2"
+								placeholder="Headline"
+								bind:value={aboutInfo.headline}
 							/>
 						</div>
-					{/each}
-				</div>
-			</div>
-		{:else if activeTab === 'contact' && !isLoading}
-			<!-- Contact Tab -->
-			<div class="mb-20 p-4">
-				<div class="space-y-4">
-					<div>
-						<label for="email" class="mb-2 block">Email</label>
-						<input name="email" bind:value={contactInfo.email} class="w-full rounded border p-2" />
-					</div>
-					<div>
-						<label for="phone" class="mb-2 block">Phone</label>
-						<input name="phone" bind:value={contactInfo.phone} class="w-full rounded border p-2" />
-					</div>
-					<div>
-						<label for="linkedin" class="mb-2 block">Linkedin</label>
-						<input
-							name="linkedin"
-							bind:value={contactInfo.linkedin}
-							class="w-full rounded border p-2"
-						/>
-					</div>
-					<div>
-						<label for="github" class="mb-2 block">Github</label>
-						<input
-							name="github"
-							bind:value={contactInfo.github}
-							class="w-full rounded border p-2"
-						/>
-					</div>
+						<div class="">
+							<label for="resume">Upload New Resume PDF</label>
+							<input
+								onchange={(e) => {
+									aboutInfo.resume = e.target.files[0];
+								}}
+								id="resume"
+								class="w-full rounded border bg-background"
+								type="file"
+							/>
+						</div>
+						<Button type="submit" class="mt-4"><Save class="mr-2" /> Update Info</Button>
+					</form>
+				{:else if activeTab === 'projects' && !isLoading}
+					<div class="mb-20 p-4">
+						<div class="mb-4 flex justify-between">
+							<h2 class="text-xl font-semibold">Manage Projects</h2>
+							<Button
+								onclick={() => {
+									goto('/editor/project');
+								}}
+							>
+								<Plus class="mr-2" /> Add Project
+							</Button>
+						</div>
 
-					<Button><Save class="mr-2" /> Save Contact Info</Button>
-				</div>
-			</div>
-		{/if}
+						<div class="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+							{#each projects as project}
+								<div
+									class="rounded-xl bg-gray-800 p-6 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+								>
+									<div class="mb-4 flex justify-between">
+										<Button
+											onclick={() => {
+												let projectData = {
+													state: true,
+													type: 'edit',
+													project: { ...project, image: '' }
+												};
+												localStorage.setItem('projectData', JSON.stringify(projectData));
+												goto('/editor/project');
+											}}><Edit class="mr-2" /></Button
+										>
+										<Button onclick={() => deleteProject(project.id)}><Trash class="mr-2" /></Button>
+									</div>
+									<img
+										src={project.image}
+										alt={project.title}
+										class="mx-auto mb-4 h-48 w-full rounded-lg opacity-80"
+									/>
+									<h2 class=" text-2xl font-semibold text-white">{project.title}</h2>
+									<p class="mt-2 line-clamp-3 max-w-full break-words text-gray-400">
+										{project.description}
+									</p>
+									<span class="mt-2 space-x-2 text-center text-gray-400">
+										{#each project.technologies as tech}
+											<span class="inline-block rounded-2xl bg-gray-700 px-2 py-1 text-xs">{tech}</span>
+										{/each}
+									</span>
+									<div class="mt-6 flex justify-between">
+										<a
+											href={project.githubUrl}
+											class="text-lg font-medium text-blue-400 transition hover:text-blue-300"
+											target="_blank">GitHub</a
+										>
+										{#if project.demoUrl}
+											<a
+												href={project.demoUrl}
+												class="rounded-lg bg-blue-500 px-5 py-2 text-lg font-bold text-white shadow-lg transition hover:bg-blue-600"
+												target="_blank">Live Demo</a
+											>
+										{/if}
+									</div>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{:else if activeTab === 'skills' && !isLoading}
+					<div class="mb-20 p-4">
+						<div class="mb-4 flex gap-2">
+							<input bind:value={newSkill} class="flex-1 rounded border p-2" placeholder="New skill" />
+							<Button
+								onclick={() => {
+									skills = [...skills, newSkill];
+									newSkill = '';
+								}}
+							>
+								<Plus class="mr-2" /> Add Skill
+							</Button>
+						</div>
+						<div class="flex flex-wrap gap-2">
+							{#each skills as skill}
+								<div class="flex items-center rounded-full bg-background px-3 py-1 text-blue-800">
+									{skill}
+									<Trash
+										size={14}
+										class="ml-2 cursor-pointer hover:text-blue-600"
+										onclick={() => (skills = skills.filter((s) => s !== skill))}
+									/>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{:else if activeTab === 'contact' && !isLoading}
+					<div class="mb-20 p-4">
+						<div class="space-y-4">
+							<div>
+								<label for="email" class="mb-2 block">Email</label>
+								<input name="email" bind:value={contactInfo.email} class="w-full rounded border p-2" />
+							</div>
+							<div>
+								<label for="phone" class="mb-2 block">Phone</label>
+								<input name="phone" bind:value={contactInfo.phone} class="w-full rounded border p-2" />
+							</div>
+							<div>
+								<label for="linkedin" class="mb-2 block">Linkedin</label>
+								<input
+									name="linkedin"
+									bind:value={contactInfo.linkedin}
+									class="w-full rounded border p-2"
+								/>
+							</div>
+							<div>
+								<label for="github" class="mb-2 block">Github</label>
+								<input
+									name="github"
+									bind:value={contactInfo.github}
+									class="w-full rounded border p-2"
+								/>
+							</div>
+
+							<Button><Save class="mr-2" /> Save Contact Info</Button>
+						</div>
+					</div>
+				{/if}
+			</section>
+		{/key}
 	</div>
 </div>
 

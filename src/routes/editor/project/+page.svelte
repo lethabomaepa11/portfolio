@@ -1,9 +1,10 @@
 <script>
-	import { goto } from '$app/navigation';
-	import Button from '$lib/components/ui/button/button.svelte';
-	import TrixEditor from '$lib/custom_components/TrixEditor.svelte';
-	import { ArrowLeft, Save, X } from 'lucide-svelte';
-	import { onMount } from 'svelte';
+import { goto } from '$app/navigation';
+import Button from '$lib/components/ui/button/button.svelte';
+import TrixEditor from '$lib/custom_components/TrixEditor.svelte';
+import { ArrowLeft, Save, X } from 'lucide-svelte';
+import { onMount } from 'svelte';
+import { fade, fly } from 'svelte/transition';
 	let { data } = $props();
 	let projects = $state(data.data.projects);
 	let trixValue = $state('');
@@ -86,7 +87,7 @@
 	let isLoading = $state(false);
 </script>
 
-<div class=" flex flex-col bg-background p-4 py-8">
+<div class="editor-page-shell flex flex-col bg-background p-4 py-8">
 	<h2 class="flex w-full items-center justify-between text-2xl font-bold">
 		<span>
 			<Button onclick={() => goto('/editor')} variant="ghost" class="text-xl"><ArrowLeft /></Button>
@@ -106,6 +107,8 @@
 	</h2>
 
 	<form
+		in:fly={{ y: 20, duration: 320 }}
+		out:fade={{ duration: 180 }}
 		enctype="multipart/form-data"
 		onsubmit={projectData.type === 'edit' ? editProject : saveProject}
 		class="space-y-4"

@@ -19,6 +19,13 @@
 	let isLoading = $state(true);
 	let isMobile = $state(false);
 	let showMenu = $state(false);
+	let showBootOverlay = $state(true);
+	let introMessage = $state('Loading portfolio');
+	let introTone = $state('default');
+	let showExitOverlay = $state(false);
+	let exitMessage = $state('Leaving page');
+	let reloadIntent = false;
+	let isExiting = false;
 
 	const links = $state([
 		{ title: 'About', href: '/', key: '' },
@@ -42,6 +49,25 @@
 		} catch {
 			models.data = [];
 		}
+	};
+
+	const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+	const startExitTransition = (message, callback) => {
+		if (!browser) return;
+		if (isExiting) return;
+		isExiting = true;
+		exitMessage = message;
+		showExitOverlay = true;
+		document.documentElement.classList.add('app-leaving');
+
+		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		window.setTimeout(
+			() => {
+				callback?.();
+			},
+			reduceMotion ? 0 : 320
+		);
 	};
 
 	beforeNavigate(() => {
@@ -83,30 +109,56 @@
 			root.classList.add('app-ready');
 		});
 
-		const handleBeforeUnload = () => {
-			root.classList.add('app-leaving');
+		const handleKeydown = (event) => {
+			const key = event.key?.toLowerCase();
+			if (event.key === 'F5' || ((event.ctrlKey || event.metaKey) && key === 'r')) {
+				reloadIntent = true;
+				event.preventDefault();
+				startExitTransition('Reloading page', () => window.location.reload());
+			}
 		};
+
+		const handleBeforeUnload = () => {
+			if (isExiting) return;
+			root.classList.add('app-leaving');
+			exitMessage = reloadIntent ? 'Reloading page' : 'Leaving page';
+			showExitOverlay = true;
+		};
+
+		const navigationEntry = performance.getEntriesByType('navigation')?.[0];
+		const isReload = navigationEntry?.type === 'reload';
+		const hasVisited = sessionStorage.getItem('portfolio_visited') === '1';
+
+		if (isReload) {
+			introMessage = 'Reloading page';
+			introTone = 'reload';
+		} else if (!hasVisited) {
+			introMessage = 'Welcome, glad you are here.';
+			introTone = 'warm';
+		} else {
+			introMessage = 'Loading portfolio';
+			introTone = 'default';
+		}
+		sessionStorage.setItem('portfolio_visited', '1');
 
 		updateIsMobile();
 		window.addEventListener('resize', updateIsMobile);
+		window.addEventListener('keydown', handleKeydown);
 		window.addEventListener('beforeunload', handleBeforeUnload);
-		await getModels();
+		await Promise.all([getModels(), delay(850)]);
 		isLoading = false;
+		showBootOverlay = false;
 
 		return () => {
 			window.removeEventListener('resize', updateIsMobile);
+			window.removeEventListener('keydown', handleKeydown);
 			window.removeEventListener('beforeunload', handleBeforeUnload);
 		};
 	});
+
 </script>
 
 <ModeWatcher />
-
-{#if isLoading}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm">
-		<p class="text-sm font-medium tracking-wide text-muted-foreground">Loading portfolio...</p>
-	</div>
-{/if}
 
 <div class="relative min-h-screen">
 	<header class="sticky top-0 z-40 border-b border-white/10 bg-background shadow-[0_1px_0_rgba(255,255,255,0.04)]">
@@ -172,3 +224,20 @@
 </div>
 
 <AiChat {isMobile} />
+
+{#if showExitOverlay || showBootOverlay || isLoading}
+	<div
+		class="site-intro-overlay {showExitOverlay
+			? 'site-intro-overlay--exit'
+			: introTone === 'warm'
+				? 'site-intro-overlay--warm'
+				: introTone === 'reload'
+					? 'site-intro-overlay--reload'
+					: ''}"
+		aria-hidden="true"
+	>
+		<p class="site-intro-kicker">Portfolio</p>
+		<h2 class="site-intro-name">Lethabo Maepa</h2>
+		<p class="site-intro-message">{showExitOverlay ? exitMessage : introMessage}</p>
+	</div>
+{/if}

@@ -117,7 +117,9 @@
 	<p class="mt-3 max-w-2xl text-sm text-muted-foreground">
 		Have a project in mind or want to collaborate? Send a message and I will get back to you.
 	</p>
-	<p class="mt-2 text-sm text-primary">Hiring for a graduate developer role? Email is the fastest way to reach me.</p>
+	<p class="mt-2 text-sm text-primary">
+		Hiring for a software developer role or contract collaboration? Email is the fastest way to reach me.
+	</p>
 
 		<div class="mt-6 grid gap-8 md:grid-cols-2">
 			<div class="space-y-3">
