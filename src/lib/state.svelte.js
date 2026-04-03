@@ -73,7 +73,7 @@ export let models = $state({
 		}
 	},
 	redirectRule: () => {
-		return `To navigate the user to a specific page, use: "redirect({page})". Replace {page} with one of [about, skills, projects, experience, services, pricing, contact], or for a specific project, use its slug like "redirect(projects/{slug})". Ensure the page or slug exists before redirecting.`;
+		return `To navigate the user to a specific section, use: "redirect({section})". Replace {section} with one of [about, skills, projects, experience, services, pricing, contact]. For a specific project card in the projects section, use its slug like "redirect(projects/{slug})". Ensure the section or slug exists before redirecting.`;
 	},
 	getRandomModel: () => {
 		if (!models.data?.length) return null;
@@ -93,16 +93,16 @@ export const portfolioContext = $state({
 	info: null,
 	experience: [
 		{
-			title: 'Frontend Developer - CampusTrade Online',
+			title: 'Graduate Software Engineer - Boxfusion',
 			description:
-				'I am working on the frontend of the campustrade.co.za website, which is an online platform for students to buy or sell textbooks, calculators, study notes, and other essential items.',
-			dates: 'May 2025 - Present'
+				'As a graduate software engineer at Boxfusion, I work on a variety of projects, including web development, and backend services. I have gained experience in technologies such as React, Next.js, SQL Server, ASP.NET, ABPZero, Docker and PostgreSQL.',
+			dates: 'Feb 2026 - Present'
 		},
 		{
 			title: 'Tech Innovation Lead - GKSS NWU',
 			description:
 				"Led a society of tech students who participated in hackathons and tech events, and led the development of the society's website.",
-			dates: 'Nov 2024 - Present'
+			dates: 'Nov 2024 - Nov 2025'
 		},
 		{
 			title: '2nd Place - Arcademia Global Game Jam',

@@ -84,13 +84,17 @@
 
 		let targetPage = inLower.substring(startIndex, endIndex).trim();
 		if (targetPage.includes('about')) targetPage = '';
+		const isProjectSlugRedirect = targetPage.startsWith('projects/');
+		const hashTarget = isProjectSlugRedirect
+			? targetPage.replace('projects/', '')
+			: targetPage || 'about';
 
 		chat.isRedirecting = true;
-		chat.redirectPage = targetPage || 'home';
-		goto((isMobile ? '#' : '/') + targetPage);
+		chat.redirectPage = hashTarget;
+		goto(`/#${hashTarget}`);
 
 		return (
-			`Taking you to ${targetPage || 'home'} page.\n` +
+			`Taking you to ${hashTarget} section.\n` +
 			answer.replace(inLower.substring(startIndex - searchString.length, endIndex + 1), '')
 		);
 	};

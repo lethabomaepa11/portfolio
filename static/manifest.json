@@ -3,6 +3,18 @@
   "short_name": "Lethabo",
     "icons": [
       {
+        "src": "logo/logo.svg",
+        "sizes": "any",
+        "type": "image/svg+xml",
+        "purpose": "any"
+      },
+      {
+        "src": "logo/logo.svg",
+        "sizes": "any",
+        "type": "image/svg+xml",
+        "purpose": "maskable"
+      },
+      {
         "src": "windows11/SmallTile.scale-100.png",
         "sizes": "71x71"
       },
