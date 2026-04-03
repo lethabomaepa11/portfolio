@@ -4,7 +4,14 @@ import { json, error } from '@sveltejs/kit';
 import { rateLimit } from '$lib/rateLimiter.js';
 import { decrypt } from '$lib';
 
-
+const SYSTEM_PROMPT = `You are Ask AI for Lethabo Maepa's portfolio.
+You help recruiters and potential clients evaluate fit quickly.
+Guidelines:
+- Be accurate, concise, and professional.
+- Prefer structured outputs (short bullets or short sections).
+- Highlight relevant projects, skills, experience, pricing, and contact paths.
+- If the question requests recommendation, explain why briefly.
+- Never invent unavailable data.`;
 
 const RATE_LIMIT_CONFIG = {
     requests: 10,
@@ -34,31 +41,47 @@ export const POST = async ({ request, getClientAddress}) => {
 
         let { message } = data;
 
-        const bestModels = [
+        const candidateModels = [
             "llama-3.3-70b-versatile",
             "openai/gpt-oss-120b",
-    ];
-
-        const model = Math.random() > 0.5 ? bestModels[0] : bestModels[1];
+            "llama-3.1-8b-instant"
+        ];
         //decrypt the message
         message = decrypt(message);
         // Validate inputs
         if (!message?.trim() || typeof message !== 'string') {
             throw error(400, 'Message is required');
         }
+        if (message.length > 12000) {
+            throw error(400, 'Message is too long');
+        }
     
         
         // Process request
         const groq = new Groq({ apiKey: GROQ_API_KEY });
-        const completion = await groq.chat.completions.create({
-            messages: [{
-                role: 'user',
-                content: message,
-            }],
-            model: model,
-            temperature: 1,
-            max_tokens: 512,
-        });
+        let completion = null;
+        let selectedModel = null;
+
+        for (const model of candidateModels) {
+            try {
+                completion = await groq.chat.completions.create({
+                    messages: [
+                        { role: 'system', content: SYSTEM_PROMPT },
+                        {
+                            role: 'user',
+                            content: message,
+                        }
+                    ],
+                    model,
+                    temperature: 0.4,
+                    max_tokens: 700,
+                });
+                selectedModel = model;
+                if (completion?.choices?.[0]?.message?.content) break;
+            } catch (modelError) {
+                console.warn(`Model fallback triggered for ${model}:`, modelError?.message || modelError);
+            }
+        }
 
         // Validate response
         if (!completion?.choices?.[0]?.message?.content) {
@@ -67,6 +90,7 @@ export const POST = async ({ request, getClientAddress}) => {
         return json({
             success: true,
             response: completion.choices[0].message.content,
+            model: selectedModel,
         });
 
     } catch (err) {

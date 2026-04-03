@@ -1,65 +1,39 @@
 <script>
-	import { afterNavigate } from '$app/navigation';
 	import Seo from '$lib/custom_components/SEO.svelte';
-	import About from '$lib/pages/About.svelte';
 	import Contact from '$lib/pages/Contact.svelte';
 	import Experience from '$lib/pages/Experience.svelte';
 	import Services from '$lib/pages/Services.svelte';
 	import Skills from '$lib/pages/Skills.svelte';
-	import { onMount } from 'svelte';
-	import { derived } from 'svelte/store';
 
 	let { data } = $props();
-	let validPages = $state(['skills', 'experience', 'contact', 'services']);
 
 	const pages = [
+		{ key: 'skills', title: 'Skills', description: 'View technical capabilities', component: Skills },
 		{
-			title: 'Skills',
-			children: Skills,
-			description: 'View My Skills'
-		},
-		{
+			key: 'experience',
 			title: 'Experience',
-			children: Experience,
-			description: 'View My Experiences'
+			description: 'View professional experience',
+			component: Experience
 		},
 		{
+			key: 'contact',
 			title: 'Contact',
-			children: Contact,
-			description: "Here's how to Contact Me"
+			description: 'Get in touch',
+			component: Contact
 		},
-		{
-			title: 'Services',
-			children: Services,
-			description: 'View My Services'
-		}
+		{ key: 'services', title: 'Services', description: 'See available services', component: Services }
 	];
 
-	let currentPage = $state(
-		pages.find((page) => {
-			if (page.title.toLowerCase() === data.page) {
-				return page;
-			}
-		})
-	);
-
-	afterNavigate(() => {
-		currentPage = pages.find((page) => {
-			if (page.title.toLowerCase() === data.page) {
-				return page;
-			}
-		});
-	});
+	const currentPage = $derived(pages.find((entry) => entry.key === data.page));
 </script>
 
-<Seo title={currentPage.title} desc={currentPage.description} />
-{#if validPages.includes(data.page)}
-	{#each pages as page}
-		{#if page.title.toLowerCase() === data.page}
-			<title>{page.title} | Lethabo Maepa</title>
-			<page.children pageData={data.data} />
-		{/if}
-	{/each}
+{#if currentPage}
+	<Seo title={currentPage.title} desc={currentPage.description} />
+	<currentPage.component pageData={data.data} />
 {:else}
-	<p class="flex min-h-screen items-center justify-center text-center">Page not found</p>
+	<div class="section-wrap py-12">
+		<div class="surface-card text-center">
+			<p class="text-sm text-muted-foreground">Page not found.</p>
+		</div>
+	</div>
 {/if}

@@ -1,32 +1,25 @@
 <script>
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
-	import Loading from '$lib/custom_components/Loading.svelte';
-
 	import {
+		AlertTriangle,
+		CheckCheckIcon,
+		Github,
+		Linkedin,
+		Loader2,
 		Mail,
 		Phone,
-		Linkedin,
-		Github,
-		Send,
-		CheckCheckIcon,
-		AlertTriangle,
-		Loader2
+		Send
 	} from 'lucide-svelte';
-	import { slide, fade } from 'svelte/transition';
+	import { fade } from 'svelte/transition';
+
 	let { pageData } = $props();
-	const contactInfo = [
-		{
-			title: 'Email',
-			value: 'lethabomaepa11@gmail.com',
-			icon: Mail
-		},
-		{
-			title: 'Phone',
-			value: '+27 63 744 0396',
-			icon: Phone
-		}
-	];
+
+	const contactInfo = $derived([
+		{ title: 'Email', value: pageData.info.email, icon: Mail },
+		{ title: 'Phone', value: pageData.info.phone, icon: Phone }
+	]);
+
 	let form = $state({
 		name: '',
 		email: '',
@@ -34,199 +27,184 @@
 		subject: 'Thank you for reaching out',
 		error: ''
 	});
+
 	let statuses = $state({
 		loading: false,
 		success: false,
 		error: false
 	});
-	const handleSubmit = async (e) => {
-		e.preventDefault();
+
+	const validateForm = () => {
+		const errors = [];
+		if (!form.name.trim()) errors.push('Please enter your name');
+		if (!form.email.trim()) errors.push('Please enter your email');
+		if (!form.message.trim()) errors.push('Please enter your message');
+		return errors;
+	};
+
+	const handleSubmit = async (event) => {
+		event.preventDefault();
 		statuses.loading = true;
 		statuses.success = false;
 		statuses.error = false;
-		if (form.name && form.email && form.message) {
-			let forMe = form;
-			let message = form.message;
-			//send email to the person who sent the message
-			form.message =
-				"Your message has been received: <br/><div class='message'>" + form.message + '</div>';
-			form.message +=
-				'<br/><br/>Thank you for reaching out, I will get back to you as soon as possible<br/><br/>Best regards,<br/>Lethabo Maepa';
-			let res = await fetch('/api/contact/message', {
-				method: 'POST',
-				body: JSON.stringify({ data: form })
-			});
-			let r = await res.json();
-			if (r.success) {
-				//send an email to myself
-				forMe.message =
-					'You have a new message from ' +
-					forMe.name +
-					': ' +
-					forMe.email +
-					' with the following message: <br/><div class="message">' +
-					message +
-					'</div>';
-				forMe.subject = 'New message from ' + forMe.name;
-				forMe.name = 'Lethabo Maepa';
-				forMe.email = 'lethabomaepa11@gmail.com';
-				let res = await fetch('/api/contact/message', {
-					method: 'POST',
-					body: JSON.stringify({ data: form })
-				});
-				let r = await res.json();
-				if (r.success) {
-					form = {
-						name: '',
-						email: '',
-						message: '',
-						subject: 'Thank you for reaching out'
-					};
-					statuses.success = true;
-				}
-			}
-		} else {
-			form.error = '';
+		form.error = '';
 
-			if (!form.message.length) {
-				form.error = '\nPlease enter your message';
-			}
-			if (!form.email.length) {
-				form.error = '\nPlease enter your email';
-			}
-			if (!form.name.length) {
-				form.error = '\nPlease enter your name';
-			}
-			if (!form.message && !form.email && !form.name) {
-				form.error = '\nPlease enter your name, email and message';
-			}
+		const errors = validateForm();
+		if (errors.length) {
+			form.error = errors.join('\n');
+			statuses.error = true;
+			statuses.loading = false;
+			return;
+		}
+
+		const originalMessage = form.message;
+		const visitorPayload = {
+			...form,
+			message:
+				"Your message has been received: <br/><div class='message'>" +
+				originalMessage +
+				'</div><br/><br/>Thank you for reaching out, I will get back to you as soon as possible.<br/><br/>Best regards,<br/>Lethabo Maepa'
+		};
+
+		const visitorResponse = await fetch('/api/contact/message', {
+			method: 'POST',
+			body: JSON.stringify({ data: visitorPayload })
+		});
+		const visitorResult = await visitorResponse.json();
+
+		if (!visitorResult.success) {
+			statuses.error = true;
+			statuses.loading = false;
+			return;
+		}
+
+		const ownerPayload = {
+			name: 'Lethabo Maepa',
+			email: 'lethabomaepa11@gmail.com',
+			subject: `New message from ${form.name}`,
+			message:
+				`You have a new message from ${form.name}: ${form.email}.<br/>` +
+				`<div class="message">${originalMessage}</div>`
+		};
+
+		const ownerResponse = await fetch('/api/contact/message', {
+			method: 'POST',
+			body: JSON.stringify({ data: ownerPayload })
+		});
+		const ownerResult = await ownerResponse.json();
+
+		if (ownerResult.success) {
+			form = {
+				name: '',
+				email: '',
+				message: '',
+				subject: 'Thank you for reaching out',
+				error: ''
+			};
+			statuses.success = true;
+		} else {
 			statuses.error = true;
 		}
-		statuses.loading = false;
-	};
 
-	let formRef = $state();
-	const bringFormToCenter = (e) => {
-		console.log(e);
-		formRef.scrollIntoView({
-			behavior: 'smooth',
-			block: 'center'
-		});
+		statuses.loading = false;
 	};
 </script>
 
-<section
-	id="contact"
-	class="bg-background py-16"
-	transition:slide={{ delay: 300, duration: 500, direction: 'right' }}
->
-	<div class="container mx-auto max-w-6xl px-4">
-		<div class="mb-12 text-center">
-			<h2 class="mb-4 text-3xl font-bold text-gray-900 dark:text-white">Get in Touch</h2>
-			<p class="mx-auto max-w-xl text-gray-600 dark:text-gray-300">
-				Have a project in mind? Wish to collaborate? or just leaving a message? Feel free to contact
-				me.
-			</p>
-		</div>
+<section id="contact" class="section-wrap border-t border-white/10 py-10 md:py-12" in:fade={{ duration: 220 }}>
+	<div class="panel">
+		<p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Contact</p>
+		<h2 class="mt-2 text-2xl font-bold md:text-3xl">Let's work together</h2>
+	<p class="mt-3 max-w-2xl text-sm text-muted-foreground">
+		Have a project in mind or want to collaborate? Send a message and I will get back to you.
+	</p>
+	<p class="mt-2 text-sm text-primary">Hiring for a graduate developer role? Email is the fastest way to reach me.</p>
 
-		<div class="grid gap-12 md:grid-cols-2">
-			<div class="space-y-6">
-				<div class=" flex flex-col gap-2 rounded-lg p-4">
-					{#each contactInfo as contact}
-						<h3 class="font-semibold text-gray-900 dark:text-white">{contact.title}</h3>
-						<div class="flex items-center gap-2 rounded p-3">
-							<contact.icon class="h-6 w-6 text-blue-400" />
-							<a
-								href={contact.title === 'Email'
-									? `mailto:${contact.value}`
-									: `tel:${contact.value}`}
-								class="text-gray-600 hover:underline dark:text-gray-300">{contact.value}</a
-							>
+		<div class="mt-6 grid gap-8 md:grid-cols-2">
+			<div class="space-y-3">
+				{#each contactInfo as contact}
+					<div class="item-card">
+						<p class="text-xs uppercase tracking-[0.14em] text-muted-foreground">{contact.title}</p>
+						<div class="mt-2 flex items-center gap-2 text-sm">
+							<contact.icon class="h-4 w-4 text-primary" />
+							<a href={contact.title === 'Email' ? `mailto:${contact.value}` : `tel:${contact.value}`}>
+								{contact.value}
+							</a>
 						</div>
-					{/each}
+					</div>
+				{/each}
 
-					<h3 class="font-semibold text-gray-900 dark:text-white">LinkedIn</h3>
-					<div class="flex items-center gap-2 rounded p-3">
-						<Linkedin class="h-6 w-6 text-blue-400" />
+				<div class="item-card">
+					<p class="text-xs uppercase tracking-[0.14em] text-muted-foreground">Social</p>
+					<div class="mt-2 flex flex-wrap gap-4 text-sm">
 						<a
 							href={pageData.info.linkedin}
-							class="text-gray-600 hover:underline dark:text-gray-300">@lethabomaepa11</a
+							target="_blank"
+							rel="noreferrer"
+							class="inline-flex items-center gap-2 hover:text-primary"
 						>
-					</div>
-					<h3 class="font-semibold text-gray-900 dark:text-white">Github</h3>
-					<div class="flex items-center gap-2 rounded p-3">
-						<Github class="h-6 w-6 text-blue-400" />
-						<a href={pageData.info.github} class="text-gray-600 hover:underline dark:text-gray-300"
-							>@lethabomaepa11</a
+							<Linkedin class="h-4 w-4 text-primary" />
+							LinkedIn
+						</a>
+						<a
+							href={pageData.info.github}
+							target="_blank"
+							rel="noreferrer"
+							class="inline-flex items-center gap-2 hover:text-primary"
 						>
+							<Github class="h-4 w-4 text-primary" />
+							GitHub
+						</a>
 					</div>
 				</div>
 			</div>
 
-			<!-- svelte-ignore a11y_click_events_have_key_events -->
-			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-			<form
-				bind:this={formRef}
-				onclick={bringFormToCenter}
-				name="contact"
-				method="POST"
-				onsubmit={handleSubmit}
-				class="space-y-4 rounded-lg border bg-background/80 p-5 shadow-xl backdrop-blur"
-			>
-				{#if statuses.loading}
-					<span class="flex items-center justify-between rounded p-2 text-sm text-blue-400">
-						Please wait... <Loader2 class="animate-spin" />
-					</span>
-				{:else}
-					{#if statuses.success}
-						<span class="flex flex-col rounded p-2 text-sm text-green-400">
-							<p class="flex items-center justify-between">
-								Your message was sent successfully <CheckCheckIcon />
-							</p>
-							Please Check your emails for confirmation.
-						</span>
-					{/if}
-					{#if statuses.error}
-						<span class="flex items-center justify-between rounded p-2 text-sm text-red-400">
-							{form.error || 'Oops...Something went wrong!, Please try again.'}
-							<AlertTriangle />
-						</span>
-					{/if}
-					<div>
-						<label for="name">Full Name</label>
-						<Input bind:value={form.name} name="name" label="Full Name" placeholder="John Doe" />
+			<form onsubmit={handleSubmit} class="item-card space-y-4">
+			{#if statuses.loading}
+				<div class="flex items-center justify-between rounded bg-primary/10 px-3 py-2 text-sm text-primary">
+					Sending message...
+					<Loader2 class="h-4 w-4 animate-spin" />
+				</div>
+			{/if}
+
+			{#if statuses.success}
+				<div class="flex items-center gap-2 rounded bg-green-500/15 px-3 py-2 text-sm text-green-300">
+					<CheckCheckIcon class="h-4 w-4" />
+					Message sent successfully.
+				</div>
+			{/if}
+
+			{#if statuses.error}
+				<div class="rounded bg-red-500/15 px-3 py-2 text-sm text-red-300">
+					<div class="flex items-center gap-2">
+						<AlertTriangle class="h-4 w-4" />
+						<span>{form.error || 'Something went wrong. Please try again.'}</span>
 					</div>
-					<div>
-						<label for="email">Email</label>
-						<Input
-							bind:value={form.email}
-							name="email"
-							type="email"
-							label="EMail"
-							placeholder="john@example.com"
-						/>
-					</div>
-					<div>
-						<label for="message">Message</label>
-						<textarea
-							bind:value={form.message}
-							name="message"
-							class="w-full rounded border bg-background p-3"
-							label="Message"
-							rows="5"
-							placeholder="Your message..."
-						></textarea>
-						<Button variant="link" target="_blank" class="text-sm text-green-400">
-							<AlertTriangle />
-							<a href="https://www.brevo.com/en/" class="font-bold underline" target="_blank"
-								>Brevo</a
-							> is used to send emails from this form.</Button
-						>
-						<Button color="blue" type="submit" class="w-full">
-							<Send class="mr-2" /> Send Message
-						</Button>
-					</div>
-				{/if}
+				</div>
+			{/if}
+
+			<div>
+				<label for="name" class="mb-1 block text-sm">Full Name</label>
+				<Input id="name" bind:value={form.name} name="name" placeholder="John Doe" />
+			</div>
+			<div>
+				<label for="email" class="mb-1 block text-sm">Email</label>
+				<Input id="email" bind:value={form.email} name="email" type="email" placeholder="john@example.com" />
+			</div>
+			<div>
+				<label for="message" class="mb-1 block text-sm">Message</label>
+				<textarea
+					id="message"
+					bind:value={form.message}
+					name="message"
+					rows="5"
+					placeholder="Tell me about your project..."
+					class="w-full rounded-md border border-white/10 bg-background p-3 text-sm"
+				></textarea>
+			</div>
+			<Button type="submit" class="w-full">
+				<Send class="h-4 w-4" />
+				Send Message
+			</Button>
 			</form>
 		</div>
 	</div>

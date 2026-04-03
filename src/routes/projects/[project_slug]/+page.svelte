@@ -1,62 +1,81 @@
 <script>
 	import Button from '$lib/components/ui/button/button.svelte';
-	import { ArrowLeft } from 'lucide-svelte';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
-	import { onMount } from 'svelte';
 	import TrixDisplay from '$lib/custom_components/TrixDisplay.svelte';
+	import { ArrowLeft } from 'lucide-svelte';
+	import { onMount } from 'svelte';
+
 	let { data } = $props();
-	let mobile = $state(new IsMobile());
-	let isMobile = $state(mobile.current);
+	let isMobile = $state(false);
 	let viewState = $state('image');
-	const handleViewStateChange = (state) => {
-		viewState = state;
+
+	const updateIsMobile = () => {
+		isMobile = new IsMobile().current;
 	};
+
 	onMount(() => {
-		window.addEventListener('resize', () => {
-			mobile = new IsMobile();
-			isMobile = mobile.current;
-		});
+		updateIsMobile();
+		window.addEventListener('resize', updateIsMobile);
+		return () => window.removeEventListener('resize', updateIsMobile);
 	});
 </script>
 
 <svelte:head>
-	<title>{data?.project?.title} | DevLethabo</title>
+	<title>{data?.project?.title} | Lethabo Maepa</title>
 	<meta name="description" content={data?.project?.description} />
 </svelte:head>
 
-<main class="md:py-12">
-	<h1 class="text-3xl font-extrabold text-blue-400 drop-shadow-lg">
-		<Button
-			variant="ghost"
-			href={isMobile ? `/#${data.project?.slug}` : `/projects#${data.project?.slug}`}
-			><ArrowLeft /></Button
-		>
-		{data.project?.title}
-	</h1>
-	<section class="w-full space-y-5 p-5">
-		{#if !isMobile && data.project?.demoUrl.includes('https://')}
-			<div class="flex w-full gap-2">
-				<Button
-					onclick={() => handleViewStateChange('image')}
-					variant={viewState === 'image' ? 'default' : 'ghost'}>View Screenshot</Button
-				>
-				<Button
-					onclick={() => handleViewStateChange('iframe')}
-					variant={viewState === 'iframe' ? 'default' : 'ghost'}>View Embedded site</Button
-				>
-			</div>
-		{/if}
+<section class="section-wrap py-8 md:py-10">
+	<div class="panel">
+		<div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+			<h1 class="text-2xl font-bold md:text-3xl">{data.project?.title}</h1>
+			<Button
+				variant="outline"
+				href={isMobile ? `/#${data.project?.slug}` : `/projects#${data.project?.slug}`}
+			>
+				<ArrowLeft size={16} />
+				Back to projects
+			</Button>
+		</div>
 
-		{#if viewState === 'iframe' && data.project?.demoUrl}
-			<iframe
-				title={data.project?.title}
-				src={data.project?.demoUrl}
-				class="h-[500px] w-full rounded"
-			></iframe>
-		{:else}
-			<img src={data.project?.image} alt={data.project?.title} class="w-full rounded" />
-		{/if}
-		<p>{data.project?.description}</p>
-		<TrixDisplay content={data.project?.case_study} />
-	</section>
-</main>
+	{#if !isMobile && data.project?.demoUrl?.includes('https://')}
+		<div class="mt-5 flex gap-2">
+			<Button
+				onclick={() => (viewState = 'image')}
+				variant={viewState === 'image' ? 'default' : 'outline'}
+				size="sm"
+			>
+				Screenshot
+			</Button>
+			<Button
+				onclick={() => (viewState = 'iframe')}
+				variant={viewState === 'iframe' ? 'default' : 'outline'}
+				size="sm"
+			>
+				Embedded Demo
+			</Button>
+		</div>
+	{/if}
+
+		<div class="mt-5">
+			{#if viewState === 'iframe' && data.project?.demoUrl}
+				<iframe
+					title={data.project?.title}
+					src={data.project?.demoUrl}
+					class="h-[520px] w-full rounded-md border border-white/10"
+				></iframe>
+			{:else}
+				<img
+					src={data.project?.image}
+					alt={`Screenshot of ${data.project?.title}`}
+					class="w-full rounded-md border border-white/10"
+				/>
+			{/if}
+		</div>
+
+		<p class="mt-5 text-sm leading-relaxed text-muted-foreground">{data.project?.description}</p>
+		<div class="prose mt-6 max-w-none dark:prose-invert">
+			<TrixDisplay content={data.project?.case_study} />
+		</div>
+	</div>
+</section>

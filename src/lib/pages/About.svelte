@@ -1,43 +1,35 @@
 <script>
 	import Button from '$lib/components/ui/button/button.svelte';
+	import { Download } from 'lucide-svelte';
 
-	import { User, Award, Briefcase, Download } from 'lucide-svelte';
-	import { slide } from 'svelte/transition';
 	let { pageData } = $props();
-	let stats = $state([
-		{ icon: Award, value: '5+', label: 'Years Experience' },
-		{ icon: Briefcase, value: '50+', label: 'Projects Completed' },
-		{ icon: User, value: '100%', label: 'Client Satisfaction' }
-	]);
+
+	const highlights = [
+		'Graduate developer with hands-on product delivery experience',
+		'Strong frontend foundation with practical full-stack capability',
+		'Focused on clean implementation, performance, and maintainability'
+	];
 </script>
 
-<section
-	id="about"
-	class="bg-background"
-	transition:slide={{ delay: 300, duration: 500, direction: 'right' }}
->
-	<div class="container mx-auto max-w-6xl px-4">
-		<div class="grid items-center gap-12 md:grid-cols-2">
-			<div>
-				<h2 class="mb-6 text-3xl font-bold text-gray-900 dark:text-white">About Me</h2>
-				<p class="mb-8 leading-relaxed text-gray-600 dark:text-gray-300">
-					{pageData.info.about}
-				</p>
+<section id="about" class="py-1">
+	<p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">About</p>
+	<h2 class="mt-2 text-2xl font-bold md:text-3xl">Profile</h2>
+	<p class="mt-4 max-w-3xl leading-relaxed text-muted-foreground">{pageData.info.about}</p>
+	<p class="mt-3 text-sm text-primary">Open to graduate and junior developer opportunities.</p>
 
-				<div class="mb-8 hidden grid-cols-3 gap-4">
-					{#each stats as stat}
-						<div class="rounded-lg bg-blue-50 p-4 text-center dark:bg-gray-700">
-							<stat.icon class="mx-auto mb-2 h-6 w-6 text-blue-400" />
-							<p class="text-xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-							<p class="text-sm text-gray-600 dark:text-gray-300">{stat.label}</p>
-						</div>
-					{/each}
-				</div>
+	<ul class="mt-5 space-y-2 text-sm text-muted-foreground">
+		{#each highlights as item}
+			<li class="flex gap-2">
+				<span class="mt-[7px] h-1.5 w-1.5 rounded-full bg-primary"></span>
+				<span>{item}</span>
+			</li>
+		{/each}
+	</ul>
 
-				<Button target="_blank" href={pageData.info.resume} class="w-full md:w-auto">
-					<Download class="mr-2" /> Download Resume
-				</Button>
-			</div>
-		</div>
-	</div>
+	{#if pageData.info.resume}
+		<Button target="_blank" href={pageData.info.resume} variant="outline" class="mt-6">
+			<Download size={16} />
+			Download Resume
+		</Button>
+	{/if}
 </section>

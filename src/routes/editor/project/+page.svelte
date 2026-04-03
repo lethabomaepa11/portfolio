@@ -126,7 +126,7 @@
 				bind:value={projectData.project.description}
 				placeholder="Project Description"
 				class="h-32 w-full rounded border bg-background p-2"
-			/>
+			></textarea>
 		</div>
 		<div>
 			<label for="image">Image</label>

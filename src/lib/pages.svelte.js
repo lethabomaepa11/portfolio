@@ -2,6 +2,7 @@
 		BrainCog,
 		BriefcaseBusiness,
 		Contact,
+		HandCoins,
 		FolderCode,
 		HelpingHand,
         UserRoundSearchIcon,
@@ -36,6 +37,12 @@ export const pages = [
 			title: 'Services',
 			url: 'services',
 			icon: HelpingHand,
+			variant: 'ghost'
+		},
+		{
+			title: 'Pricing',
+			url: 'pricing',
+			icon: HandCoins,
 			variant: 'ghost'
 		},
 		{

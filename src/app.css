@@ -1,103 +1,109 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 @layer base {
 	:root {
-		--background: 0 0% 100%;
-		--foreground: 240 10% 3.9%;
-		--muted: 240 4.8% 95.9%;
-		--muted-foreground: 240 3.8% 46.1%;
-		--popover: 0 0% 100%;
-		--popover-foreground: 240 10% 3.9%;
-		--card: 0 0% 100%;
-		--card-foreground: 240 10% 3.9%;
-		--border: 240 5.9% 90%;
-		--input: 240 5.9% 90%;
-		--primary: 240 5.9% 10%;
-		--primary-foreground: 0 0% 98%;
-		--secondary: 240 4.8% 95.9%;
-		--secondary-foreground: 240 5.9% 10%;
-		--accent: 240 4.8% 95.9%;
-		--accent-foreground: 240 5.9% 10%;
+		--background: 0 0% 4%;
+		--foreground: 220 20% 96%;
+		--muted: 0 0% 10%;
+		--muted-foreground: 220 10% 68%;
+		--popover: 0 0% 4%;
+		--popover-foreground: 220 20% 96%;
+		--card: 0 0% 7%;
+		--card-foreground: 220 20% 96%;
+		--border: 0 0% 16%;
+		--input: 0 0% 16%;
+		--primary: 208 100% 66%;
+		--primary-foreground: 220 45% 14%;
+		--secondary: 0 0% 12%;
+		--secondary-foreground: 220 20% 96%;
+		--accent: 0 0% 14%;
+		--accent-foreground: 220 20% 96%;
 		--destructive: 0 72.22% 50.59%;
 		--destructive-foreground: 0 0% 98%;
-		--ring: 240 5% 64.9%;
+		--ring: 208 100% 66%;
 		--radius: 0.5rem;
 
-		--sidebar-background: 0 0% 98%;
-		--sidebar-foreground: 240 5.3% 26.1%;
-		--sidebar-primary: 240 5.9% 10%;
-		--sidebar-primary-foreground: 0 0% 98%;
-		--sidebar-accent: 240 4.8% 95.9%;
-		--sidebar-accent-foreground: 240 5.9% 10%;
-		--sidebar-border: 220 13% 91%;
-		--sidebar-ring: 240 5% 64.9%;
+		--sidebar-background: 0 0% 7%;
+		--sidebar-foreground: 220 20% 96%;
+		--sidebar-primary: 208 100% 66%;
+		--sidebar-primary-foreground: 220 45% 14%;
+		--sidebar-accent: 0 0% 12%;
+		--sidebar-accent-foreground: 220 20% 96%;
+		--sidebar-border: 0 0% 16%;
+		--sidebar-ring: 208 100% 66%;
 	}
 
 	.dark {
-		--background: 240 10% 3.9%;
+		--background: 0 0% 3%;
 		--foreground: 0 0% 98%;
-		--muted: 240 3.7% 15.9%;
-		--muted-foreground: 240 5% 64.9%;
-		--popover: 240 10% 3.9%;
+		--muted: 0 0% 9%;
+		--muted-foreground: 220 10% 72%;
+		--popover: 0 0% 3%;
 		--popover-foreground: 0 0% 98%;
-		--card: 240 10% 3.9%;
+		--card: 0 0% 6%;
 		--card-foreground: 0 0% 98%;
-		--border: 240 3.7% 15.9%;
-		--input: 240 3.7% 15.9%;
-		--primary: 0 0% 98%;
-		--primary-foreground: 240 5.9% 10%;
-		--secondary: 240 3.7% 15.9%;
+		--border: 0 0% 15%;
+		--input: 0 0% 15%;
+		--primary: 208 100% 70%;
+		--primary-foreground: 220 45% 14%;
+		--secondary: 0 0% 11%;
 		--secondary-foreground: 0 0% 98%;
-		--accent: 240 3.7% 15.9%;
+		--accent: 0 0% 14%;
 		--accent-foreground: 0 0% 98%;
 		--destructive: 0 62.8% 30.6%;
 		--destructive-foreground: 0 85.7% 97.3%;
-		--ring: 240 3.7% 48%;
+		--ring: 208 100% 70%;
 
-		--sidebar-background: 240 5.9% 10%;
-		--sidebar-foreground: 240 4.8% 95.9%;
-		--sidebar-primary: 224.3 76.3% 48%;
-		--sidebar-primary-foreground: 0 0% 100%;
-		--sidebar-accent: 240 3.7% 15.9%;
-		--sidebar-accent-foreground: 240 4.8% 95.9%;
-		--sidebar-border: 240 3.7% 15.9%;
-		--sidebar-ring: 240 4.9% 83.9%;
+		--sidebar-background: 0 0% 6%;
+		--sidebar-foreground: 0 0% 98%;
+		--sidebar-primary: 208 100% 70%;
+		--sidebar-primary-foreground: 220 45% 14%;
+		--sidebar-accent: 0 0% 11%;
+		--sidebar-accent-foreground: 0 0% 98%;
+		--sidebar-border: 0 0% 15%;
+		--sidebar-ring: 208 100% 70%;
 	}
 }
 
 :root {
-	--font-heading: 'Bahnschrift', 'Segoe UI', system-ui, -apple-system, sans-serif;
-	--font-body: 'Bahnschrift', 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
+	--font-heading: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+	--font-body: 'Segoe UI', 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
 	--font-code: 'Space Mono', 'Roboto Mono', Menlo, Consolas, monospace;
 	--font-accent: 'Playfair Display', Georgia, 'Times New Roman', serif;
 	--font-handwritten: 'Caveat', cursive;
 }
+
 @layer base {
 	* {
 		@apply border-border;
-		cursor: url('/cursor.png');
 	}
+
 	body {
 		@apply bg-background text-foreground;
 		font-feature-settings:
 			'rlig' 1,
 			'calt' 1;
-	}
-	body {
 		font-family: var(--font-body);
 		line-height: 1.6;
+		background-color: #090909;
 	}
+
 	h1,
 	h2,
 	h3 {
 		font-family: var(--font-heading);
 		font-weight: 700;
-		letter-spacing: -0.03em;
+		letter-spacing: -0.02em;
+	}
+
+	a {
+		@apply transition-colors;
 	}
 }
+
 @layer base {
-	/* Custom Scrollbar Design */
 	::-webkit-scrollbar {
 		@apply h-2.5 w-2.5;
 		background: hsl(var(--background));
@@ -125,13 +131,11 @@
 		background: hsl(var(--background));
 	}
 
-	/* Firefox Support */
 	* {
 		scrollbar-width: thin;
 		scrollbar-color: hsl(var(--primary)) hsl(var(--muted) / 0.4);
 	}
 
-	/* Dark Mode Adjustments */
 	.dark {
 		::-webkit-scrollbar-track {
 			background: hsl(var(--muted) / 0.2);
@@ -150,10 +154,107 @@
 		}
 	}
 
-	/* Smooth Scroll Behavior */
 	@media (prefers-reduced-motion: no-preference) {
 		html {
 			scroll-behavior: smooth;
 		}
+	}
+}
+
+@layer components {
+	.surface-card {
+		@apply bg-transparent p-0 shadow-none;
+	}
+
+	.panel {
+		@apply rounded-2xl border border-white/10 bg-card/35 p-5 md:p-6;
+	}
+
+	.item-card {
+		@apply rounded-xl border border-white/10 bg-background/35 p-4 transition-colors hover:bg-background/50;
+	}
+
+	.section-wrap {
+		@apply mx-auto w-full max-w-5xl px-4 md:px-6;
+	}
+}
+
+html:not(.app-ready) body {
+	opacity: 0;
+}
+
+html.app-ready body {
+	animation: page-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html.app-leaving body {
+	animation: page-leave 220ms ease-in both;
+}
+
+@keyframes page-enter {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes page-leave {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 420ms;
+	animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(root) {
+	animation-name: route-old;
+}
+
+::view-transition-new(root) {
+	animation-name: route-new;
+}
+
+@keyframes route-old {
+	to {
+		opacity: 0;
+		transform: translateY(-10px) scale(0.99);
+		filter: blur(1px);
+	}
+}
+
+@keyframes route-new {
+	from {
+		opacity: 0;
+		transform: translateY(14px) scale(0.995);
+		filter: blur(2px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+		filter: blur(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html,
+	body,
+	* {
+		scroll-behavior: auto !important;
+	}
+
+	html.app-ready body,
+	html.app-leaving body,
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation: none !important;
 	}
 }

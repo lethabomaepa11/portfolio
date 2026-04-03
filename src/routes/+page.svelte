@@ -3,184 +3,124 @@
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import About from '$lib/pages/About.svelte';
 	import Contact from '$lib/pages/Contact.svelte';
+	import Experience from '$lib/pages/Experience.svelte';
 	import Services from '$lib/pages/Services.svelte';
 	import Skills from '$lib/pages/Skills.svelte';
-	import {
-		Linkedin,
-		Github,
-		Mail,
-		Download,
-		Youtube,
-		Briefcase,
-		BadgeInfo,
-		ArrowRight,
-		ChevronDown,
-		ChevronUp
-	} from 'lucide-svelte';
-	import { onMount } from 'svelte';
-	import { fade, slide } from 'svelte/transition';
-	import Page from './projects/+page.svelte';
 	import Seo from '$lib/custom_components/SEO.svelte';
-	import Experience from '$lib/pages/Experience.svelte';
+	import { ArrowRight, Github, Linkedin, Mail, Download } from 'lucide-svelte';
+	import { onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
+	import ProjectsPage from './projects/+page.svelte';
 
-	// Props for customizable content
-	let {
-		title = 'Full-Stack Developer',
-		subtitle = 'Turning ideas into digital reality',
-		data
-	} = $props();
-	const pages = [
-		{
-			title: 'Projects',
-			children: Page
-		},
-		{
-			title: 'Skills',
-			children: Skills
-		},
-		{
-			title: 'Experience',
-			children: Experience
-		},
-		{
-			title: 'Services',
-			children: Services
-		},
+	let { data } = $props();
+	let isMobile = $state(false);
 
-		{
-			title: 'Contact',
-			children: Contact
-		}
-	];
-	let mobile = $state(new IsMobile());
-	let isMobile = $state(mobile.current);
-
-	const moreAboutState = $state({
-		open: true,
-		icon: ChevronUp,
-		text: 'Less about me'
-	});
-	const toggleMoreAbout = () => {
-		moreAboutState.open = !moreAboutState.open;
-		moreAboutState.icon = moreAboutState.open ? ChevronUp : ChevronDown;
-		moreAboutState.text = moreAboutState.open ? 'Less about me' : 'More about me';
+	const updateIsMobile = () => {
+		isMobile = new IsMobile().current;
 	};
 
+	const featuredProjects = $derived((data.data.projects ?? []).slice(0, 3));
+	const recruiterSignals = [
+		'Open to Graduate / Junior Software Developer roles',
+		'Shipped projects with source code and live demos',
+		'Clear case studies explaining problem-solving approach',
+		'Strong foundation in SvelteKit, JavaScript/TypeScript, and APIs',
+		'Transparent South African project pricing with clear scope bands'
+	];
+
 	onMount(() => {
-		window.addEventListener('resize', () => {
-			mobile = new IsMobile();
-			isMobile = mobile.current;
-		});
+		updateIsMobile();
+		window.addEventListener('resize', updateIsMobile);
+		return () => window.removeEventListener('resize', updateIsMobile);
 	});
 </script>
 
-<Seo title="About Me" description="{data.data.info.headline}, {data.data.info.about}" />
+<Seo
+	title="Portfolio"
+	desc={data?.data?.info?.headline || 'Graduate developer building practical web products.'}
+/>
 
-<section class="bg-gradient-to-b from-gray-900 to-gray-800 px-4 py-10 md:py-10">
-	<div class="container mx-auto max-w-6xl">
-		<div class="flex flex-col items-center gap-12 md:flex-row" transition:slide={{ duration: 500 }}>
-			<!-- Text Content -->
-			<div class="text-center md:w-1/2 md:text-left">
-				<div in:slide={{ delay: 300, duration: 500 }}>
-					<h1 class="mb-6 text-3xl font-bold md:text-6xl">
-						I'm <span
-							oncopy={() => {
-								if (prompt('Wish to copy my name?') == 'edit') {
-									alert('Okay');
-									window.location.href = '/editor';
-								}
-							}}
-							class="text-blue-400">Lethabo Maepa</span
-						>
-					</h1>
-					<p class="mb-8 text-xl md:text-2xl">
-						{data.data.info.headline}
-					</p>
-				</div>
+<section class="py-6 md:py-10" in:fade={{ duration: 240 }}>
+	<div class="panel">
+		<p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Graduate Developer</p>
+		<h1 class="mt-3 max-w-3xl text-3xl font-bold leading-tight md:text-5xl">
+			Lethabo Maepa
+		</h1>
+		<p class="mt-4 max-w-3xl text-base text-muted-foreground md:text-lg">{data.data.info.headline}</p>
+		<p class="mt-2 text-sm text-primary">
+			Actively seeking graduate-level software engineering opportunities.
+		</p>
 
-				<!-- Call to Action Buttons -->
-				<div class="mb-12 flex justify-center gap-4 md:justify-start" in:fade={{ delay: 600 }}>
-					<Button color="alternative" class="group" href={isMobile ? '#projects' : '/projects'}>
-						View projects
-						<span class="ml-2 transition-transform group-hover:translate-x-1">
-							<Briefcase size={20} />
-						</span>
-					</Button>
-					<Button color="blue" href={isMobile ? '#contact' : '/contact'}>Get in Touch</Button>
-				</div>
-
-				<!-- Social Links -->
-				<div class="flex justify-center gap-6 md:justify-start" in:fade={{ delay: 900 }}>
-					<a
-						href={data.data.info.linkedin}
-						target="_blank"
-						class="text-gray-400 transition-colors hover:text-blue-400"
-					>
-						<Linkedin size={24} />
-					</a>
-					<a
-						href={data.data.info.github}
-						target="_blank"
-						class="text-gray-400 transition-colors hover:text-blue-400"
-					>
-						<Github size={24} />
-					</a>
-					<a
-						href={`mailto:${data.data.info.email}`}
-						target="_blank"
-						class="text-gray-400 transition-colors hover:text-blue-400"
-					>
-						<Mail size={24} />
-					</a>
-					<a
-						href="https://www.youtube.com/@lethabomaepa11"
-						target="_blank"
-						class="text-gray-400 transition-colors hover:text-blue-400"
-					>
-						<Youtube size={24} />
-					</a>
-				</div>
-			</div>
-
-			<!-- Profile Image -->
-			<div
-				class="mt-12 md:mt-0 md:w-1/2"
-				in:slide={{ delay: 300, duration: 500, direction: 'right' }}
-			>
-				<div class="group relative">
-					<img
-						src="/home.jpg"
-						alt="Lethabo Maepa"
-						class="relative aspect-square w-full max-w-sm transform rounded-full transition-transform group-hover:-translate-y-2"
-					/>
-				</div>
-			</div>
+		<div class="mt-6 flex flex-wrap gap-3">
+			<Button href="/projects">View Projects</Button>
+			<Button href="/contact" variant="outline">Contact Me</Button>
+			<Button href="/pricing" variant="outline">Pricing</Button>
+			{#if data.data.info.resume}
+				<Button href={data.data.info.resume} target="_blank" variant="outline">
+					<Download size={15} />
+					Resume
+				</Button>
+			{/if}
 		</div>
-		<Button onclick={toggleMoreAbout} variant="link" class="flex items-center"
-			>{moreAboutState.text} <moreAboutState.icon size={20} /></Button
-		>
 
-		{#if moreAboutState.open}
-			<About pageData={data.data} data={data.data} />
-		{/if}
+		<div class="mt-6 flex flex-wrap items-center gap-5 text-sm text-muted-foreground">
+			<a href={data.data.info.linkedin} target="_blank" rel="noreferrer" class="inline-flex items-center gap-2 hover:text-primary">
+				<Linkedin size={16} />
+				LinkedIn
+			</a>
+			<a href={data.data.info.github} target="_blank" rel="noreferrer" class="inline-flex items-center gap-2 hover:text-primary">
+				<Github size={16} />
+				GitHub
+			</a>
+			<a href={`mailto:${data.data.info.email}`} class="inline-flex items-center gap-2 hover:text-primary">
+				<Mail size={16} />
+				Email
+			</a>
+		</div>
 	</div>
 </section>
+
+<section class="border-t border-white/10 py-8" in:fade={{ duration: 240, delay: 80 }}>
+	<div class="panel mb-6">
+		<p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Recruiter Snapshot</p>
+		<ul class="mt-4 grid gap-2 md:grid-cols-2">
+			{#each recruiterSignals as signal}
+				<li class="text-sm text-muted-foreground">{signal}</li>
+			{/each}
+		</ul>
+	</div>
+
+	<div class="panel">
+		<div class="flex items-center justify-between gap-3">
+			<h2 class="text-xl font-semibold md:text-2xl">Featured Projects</h2>
+			<Button variant="outline" href="/projects">All Projects</Button>
+		</div>
+
+		<div class="mt-5 space-y-3">
+			{#each featuredProjects as project}
+				<a href={`/projects/${project.slug}`} class="item-card block">
+					<p class="text-base font-semibold">{project.title}</p>
+					<p class="mt-1 text-sm text-muted-foreground">{project.description}</p>
+					<p class="mt-2 inline-flex items-center gap-1 text-sm text-primary">
+						Read Case Study
+						<ArrowRight size={14} />
+					</p>
+				</a>
+			{/each}
+		</div>
+	</div>
+</section>
+
+<section class="border-t border-white/10 py-8">
+	<div class="panel">
+		<About pageData={data.data} />
+	</div>
+</section>
+
 {#if isMobile}
-	{#each pages as page}
-		<page.children pageData={data.data} data={data.data} />
-	{/each}
+	<ProjectsPage data={{ projects: data.data.projects }} />
+	<Skills pageData={data.data} />
+	<Experience />
+	<Services />
+	<Contact pageData={data.data} />
 {/if}
-
-<style>
-	.container {
-		view-transition-name: hero-container;
-	}
-
-	h1 {
-		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-	}
-
-	img {
-		box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-	}
-</style>

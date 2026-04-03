@@ -1,187 +1,174 @@
 <script>
-	import ModeToggle from '$lib/custom_components/ModeToggle.svelte';
-	import Sidebar from '$lib/custom_components/Sidebar.svelte';
-	import {
-		AppWindow,
-		ArrowDown,
-		ArrowUp,
-		BotMessageSquare,
-		BrainCog,
-		Contact,
-		FolderCode,
-		HelpingHand,
-		House,
-		Menu,
-		User,
-		X
-	} from 'lucide-svelte';
-	import '../app.css';
-	import { ModeWatcher } from 'mode-watcher';
-	import Button from '$lib/components/ui/button/button.svelte';
-	import MenuPopUp from '$lib/custom_components/MenuPopUp.svelte';
+	import { browser } from '$app/environment';
+	import { afterNavigate, beforeNavigate, onNavigate } from '$app/navigation';
 	import { page } from '$app/stores';
-	import moment from 'moment';
-	import Window from '$lib/custom_components/Window.svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
+	import AiChat from '$lib/custom_components/AIChat.svelte';
+	import Footer from '$lib/custom_components/Footer.svelte';
+	import ModeToggle from '$lib/custom_components/ModeToggle.svelte';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
-	import { onMount } from 'svelte';
-	import { fly, slide } from 'svelte/transition';
-	import Loading from '$lib/custom_components/Loading.svelte';
-	import { afterNavigate, beforeNavigate } from '$app/navigation';
+	import { models, portfolioContext } from '$lib/state.svelte';
+	import { Menu, X } from 'lucide-svelte';
+	import { ModeWatcher } from 'mode-watcher';
 	import NProgress from 'nprogress';
 	import 'nprogress/nprogress.css';
-	import Footer from '$lib/custom_components/Footer.svelte';
-	import { pages } from '$lib/pages.svelte';
-	import { models, portfolioContext } from '$lib/state.svelte';
-	import AiChat from '$lib/custom_components/AIChat.svelte';
+	import { onMount } from 'svelte';
+	import '../app.css';
 
 	let { children, data } = $props();
 	let isLoading = $state(true);
-	beforeNavigate(({ to }) => {
+	let isMobile = $state(false);
+	let showMenu = $state(false);
+
+	const links = $state([
+		{ title: 'About', href: '/', key: '' },
+		{ title: 'Projects', href: '/projects', key: 'projects' },
+		{ title: 'Skills', href: '/skills', key: 'skills' },
+		{ title: 'Experience', href: '/experience', key: 'experience' },
+		{ title: 'Services', href: '/services', key: 'services' },
+		{ title: 'Pricing', href: '/pricing', key: 'pricing' },
+		{ title: 'Contact', href: '/contact', key: 'contact' }
+	]);
+
+	const updateIsMobile = () => {
+		isMobile = new IsMobile().current;
+	};
+
+	const getModels = async () => {
+		try {
+			const response = await fetch('/api/ai/models');
+			const payload = await response.json();
+			models.data = payload?.models?.data ?? [];
+		} catch {
+			models.data = [];
+		}
+	};
+
+	beforeNavigate(() => {
 		NProgress.start();
 	});
 
+	if (browser) {
+		onNavigate((navigation) => {
+			const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			if (!document.startViewTransition || reduceMotion) return;
+
+			return new Promise((resolve) => {
+				document.documentElement.classList.add('route-changing');
+				const transition = document.startViewTransition(async () => {
+					resolve();
+					await navigation.complete;
+				});
+				transition.finished.finally(() => {
+					document.documentElement.classList.remove('route-changing');
+				});
+			});
+		});
+	}
+
 	afterNavigate(() => {
 		NProgress.done();
+		if (isMobile) {
+			showMenu = false;
+		}
 	});
 
-	let mobile = $state(new IsMobile());
-	let isMobile = $state(mobile.current);
-	let showSidebar = $state(!isMobile);
-	let navBarAtTop = $state(true);
-
-	const getModels = async () => {
-		const res = await fetch('/api/ai/models', {
-			method: 'GET'
-		});
-		const response = await res.json();
-		return response.models.data;
-	};
-
-	portfolioContext.info = data.data;
+	$effect(() => {
+		portfolioContext.info = data.data;
+	});
 
 	onMount(async () => {
-		window.addEventListener('resize', () => {
-			mobile = new IsMobile();
-			isMobile = mobile.current;
-			showSidebar = !isMobile;
+		const root = document.documentElement;
+		requestAnimationFrame(() => {
+			root.classList.add('app-ready');
 		});
-		//listen for a change in the hash on mobile, if the hash changed, it means the user clicked on another item in the sidebar
-		window.addEventListener('hashchange', () => {
-			if (isMobile && showSidebar == true) {
-				showSidebar = false;
-			}
-		});
-		let localNb = localStorage.getItem('navBarAtTop');
-		if (localNb) {
-			navBarAtTop = localNb === 'true';
-		}
-		isLoading = false;
-	});
 
-	const toggleNavBarAtTop = () => {
-		navBarAtTop = !navBarAtTop;
-		localStorage.setItem('navBarAtTop', navBarAtTop);
-	};
+		const handleBeforeUnload = () => {
+			root.classList.add('app-leaving');
+		};
+
+		updateIsMobile();
+		window.addEventListener('resize', updateIsMobile);
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		await getModels();
+		isLoading = false;
+
+		return () => {
+			window.removeEventListener('resize', updateIsMobile);
+			window.removeEventListener('beforeunload', handleBeforeUnload);
+		};
+	});
 </script>
 
 <ModeWatcher />
+
 {#if isLoading}
-	<div
-		transition:slide
-		class="fixed z-50 flex h-screen w-screen items-center justify-center bg-background"
-	>
-		<Loading />
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm">
+		<p class="text-sm font-medium tracking-wide text-muted-foreground">Loading portfolio...</p>
 	</div>
 {/if}
-<main transition:slide class="cursor flex items-center justify-center divide-x">
-	{#if showSidebar}
-		<div
-			transition:fly
-			class="{navBarAtTop && !isMobile ? '-mt-16' : 'top-0 h-[92svh]'} min-w-[13svw] {isMobile
-				? 'fixed left-0  z-50 h-screen w-[40svw] bg-background/95'
-				: ''}"
-		>
-			{#if isMobile}
-				<h2 class="flex w-full items-center justify-between p-1 text-xl font-bold text-blue-400">
-					Menu
-					<Button variant="ghost" size="icon" onclick={() => (showSidebar = false)}><X /></Button>
-				</h2>
-			{/if}
-			<Sidebar {isMobile} />
-		</div>
-	{:else}
-		<header
-			transition:slide={{ delay: 150, duration: 500, direction: 'right' }}
-			class="fixed top-0 z-50 flex h-14 w-full items-center justify-between bg-background/95 p-3 bg-blend-overlay"
-		>
-			<a href="/" class="  text-xl font-bold text-blue-400"><h1>Lethabo Maepa</h1></a>
-			<span class="space-x-4">
+
+<div class="relative min-h-screen">
+	<header class="sticky top-0 z-40 border-b border-white/10 bg-background shadow-[0_1px_0_rgba(255,255,255,0.04)]">
+		<div class="section-wrap flex h-16 items-center justify-between">
+			<a href="/" class="text-base font-semibold tracking-wide text-foreground md:text-lg">
+				Lethabo Maepa
+			</a>
+
+			<nav class="hidden items-center gap-1 lg:flex">
+				{#each links as item}
+					<a
+						href={item.href}
+						class="rounded-md px-3 py-2 text-sm transition-colors hover:bg-white/5 hover:text-primary {$page.url.pathname === item.href
+							? 'bg-primary/15 text-primary'
+							: 'text-muted-foreground'}"
+					>
+						{item.title}
+					</a>
+				{/each}
+			</nav>
+
+			<div class="flex items-center gap-2">
 				<ModeToggle />
-				<Button onclick={() => (showSidebar = true)}><Menu /></Button>
-			</span>
-		</header>
+				{#if isMobile}
+					<Button
+						variant="outline"
+						size="icon"
+						aria-label="Toggle Menu"
+						onclick={() => (showMenu = !showMenu)}
+					>
+						{#if showMenu}
+							<X size={18} />
+						{:else}
+							<Menu size={18} />
+						{/if}
+					</Button>
+				{/if}
+			</div>
+		</div>
+	</header>
+
+	{#if isMobile && showMenu}
+		<div class="fixed inset-x-4 top-20 z-50 rounded-lg border border-white/10 bg-background p-2">
+			<nav class="grid gap-1">
+				{#each links as item}
+					<a
+						href={item.href}
+						class="rounded-lg px-3 py-2 text-sm font-medium {$page.url.pathname === item.href
+							? 'bg-primary/15 text-primary'
+							: 'text-muted-foreground hover:bg-white/5 hover:text-primary'}"
+					>
+						{item.title}
+					</a>
+				{/each}
+			</nav>
+		</div>
 	{/if}
-	<div
-		class="h-screen w-screen py-20 {navBarAtTop
-			? 'md:h-[100svh]'
-			: 'md:h-[91-svh]'} md:w-[85svw] md:overflow-auto lg:p-5"
-	>
+
+	<main class="section-wrap min-h-[70vh] py-10 md:py-12">
 		{@render children()}
 		<Footer />
-	</div>
-</main>
-{#if !isMobile}
-	<section
-		transition:slide={{ delay: 300, duration: 500, direction: 'right' }}
-		class="fixed {navBarAtTop
-			? 'top-0'
-			: 'bottom-0'} bottom-0 left-0 right-0 z-50 flex h-[8svh] w-screen items-center justify-between gap-3 bg-background/80 p-3 backdrop-blur-sm"
-	>
-		<div id="left" class="flex items-center gap-3">
-			<ModeToggle />
-			<a href="/" class="  text-xl font-bold text-blue-400"><h1>Lethabo Maepa</h1></a>
-		</div>
-		<div id="center" class="flex items-center gap-5">
-			{#each pages as item}
-				<!--When hovering on an icon, if there's a window open for that icon, display the contents of that window otherwise
-		just show the title of the icon on the tooltip-->
-				<Button
-					id="button-{item.title}"
-					data-tooltip-target="tooltip-{item.url}"
-					variant={'ghost'}
-					href="/{item.url}"
-					class="group flex flex-col hover:-translate-y-1 {$page.url?.pathname === '/' + item.url
-						? ' rounded-none border-b border-blue-400 p-5'
-						: ''}   justify-center  transition-all {item.class ?? ''}"
-				>
-					<p class="">{item.title}</p>
-				</Button>
-				<div
-					id="tooltip-{item.url}"
-					role="tooltip"
-					class="shadow-xs tooltip invisible absolute z-50 inline-block rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white opacity-0 transition-opacity duration-300 dark:bg-gray-700"
-				>
-					{item.title}
-					<div class="tooltip-arrow" data-popper-arrow></div>
-				</div>
-			{/each}
-		</div>
-		<div id="right" class="flex animate-bounce items-center gap-5 text-xs">
-			<button type="button" onclick={toggleNavBarAtTop}>
-				{#if navBarAtTop}
-					<ArrowDown />
-				{:else}
-					<ArrowUp />
-				{/if}
-			</button>
-		</div>
-	</section>
-{/if}
+	</main>
+</div>
 
 <AiChat {isMobile} />
-
-<style>
-	.cursor {
-		cursor: url('/cursor.png'), auto;
-	}
-</style>

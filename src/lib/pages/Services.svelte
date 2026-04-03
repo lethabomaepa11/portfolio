@@ -1,38 +1,24 @@
 <script>
 	import { portfolioContext } from '$lib/state.svelte';
-	import { Layout, Code, Smartphone, Server, Palette } from 'lucide-svelte';
-	import { slide } from 'svelte/transition';
-	let { pageData } = $props();
+	import { fade } from 'svelte/transition';
 </script>
 
-<section
-	id="services"
-	class="bg-background py-16"
-	transition:slide={{ delay: 300, duration: 500, direction: 'right' }}
->
-	<div class="container mx-auto max-w-6xl px-4">
-		<div class="mb-12 text-center">
-			<h2 class="mb-4 text-3xl font-bold text-gray-900 dark:text-white">What I Offer</h2>
-			<p class="mx-auto max-w-xl text-gray-600 dark:text-gray-300">
-				Comprehensive digital solutions tailored to your business needs
-			</p>
-		</div>
+<section id="services" class="section-wrap border-t border-white/10 py-10 md:py-12" in:fade={{ duration: 220 }}>
+	<div class="panel">
+		<p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Services</p>
+		<h2 class="mt-2 text-2xl font-bold md:text-3xl">How I can help</h2>
+		<p class="mt-3 max-w-2xl text-sm text-muted-foreground">
+			Practical engineering support for teams and founders building dependable products.
+		</p>
 
-		<div class="grid gap-6 md:grid-cols-2">
+		<div class="mt-6 grid gap-3 md:grid-cols-2">
 			{#each portfolioContext.services as service}
-				<div class="group p-6 transition-all hover:border-blue-400">
-					<div class="mb-4 flex items-center gap-4">
-						<div class="rounded-full bg-blue-100 p-3 dark:bg-blue-900/20">
-							<service.icon class="h-6 w-6 text-blue-400" />
-						</div>
-						<h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-							{service.title}
-						</h3>
+				<div class="item-card">
+					<div class="flex items-center gap-2">
+						<service.icon class="h-4 w-4 text-primary" />
+						<h3 class="font-semibold">{service.title}</h3>
 					</div>
-					<p class="text-gray-600 dark:text-gray-300">{service.text}</p>
-					<div
-						class="absolute inset-0 -z-10 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
-					></div>
+					<p class="mt-2 text-sm text-muted-foreground">{service.text}</p>
 				</div>
 			{/each}
 		</div>
