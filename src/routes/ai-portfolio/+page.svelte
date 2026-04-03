@@ -16,16 +16,69 @@
 	let modelUsed = $state('');
 	let usedFallback = $state(false);
 	let generated = $state(null);
+	let warningModalOpen = $state(false);
+	let warningInfo = $state({
+		title: '',
+		message: '',
+		detail: ''
+	});
 	let generationPhase = $state('idle');
 	let generationSteps = $state([]);
 	let phaseTimer = 0;
+
 	const phaseBlueprint = [
 		{ id: 'thinking', label: 'Thinking through role requirements' },
 		{ id: 'collecting', label: 'Collecting portfolio evidence' },
 		{ id: 'comparing', label: 'Comparing role to projects and skills' },
-		{ id: 'drafting', label: 'Drafting recruiter report sections' },
-		{ id: 'finalizing', label: 'Finalizing AI-generated portfolio' }
+		{ id: 'drafting', label: 'Drafting role-focused page structure' },
+		{ id: 'finalizing', label: 'Finalizing AI-generated portfolio page' }
 	];
+
+	const sectionSurfaceClassMap = {
+		panel: 'panel',
+		muted: 'rounded-2xl border border-white/10 bg-muted/35 p-5 md:p-6',
+		contrast: 'rounded-2xl border border-primary/35 bg-primary/10 p-5 md:p-6',
+		outline: 'rounded-2xl border border-dashed border-primary/45 bg-background p-5 md:p-6'
+	};
+	const sectionLayoutClassMap = {
+		stack: 'space-y-3',
+		split: 'grid gap-3 md:grid-cols-2',
+		grid2: 'grid gap-3 md:grid-cols-2',
+		grid3: 'grid gap-3 md:grid-cols-3'
+	};
+	const accentTextClassMap = {
+		primary: 'text-primary',
+		emerald: 'text-emerald-400',
+		amber: 'text-amber-400',
+		cyan: 'text-cyan-400',
+		rose: 'text-rose-400'
+	};
+	const accentBadgeClassMap = {
+		primary: 'border-primary/35 bg-primary/10 text-primary',
+		emerald: 'border-emerald-400/35 bg-emerald-500/10 text-emerald-300',
+		amber: 'border-amber-400/35 bg-amber-500/10 text-amber-300',
+		cyan: 'border-cyan-400/35 bg-cyan-500/10 text-cyan-300',
+		rose: 'border-rose-400/35 bg-rose-500/10 text-rose-300'
+	};
+	const accentCardClassMap = {
+		primary: 'border-primary/20',
+		emerald: 'border-emerald-400/20',
+		amber: 'border-amber-400/20',
+		cyan: 'border-cyan-400/20',
+		rose: 'border-rose-400/20'
+	};
+	const verdictToneClassMap = {
+		strong_yes: 'border-emerald-400/35 bg-emerald-500/12 text-emerald-300',
+		yes: 'border-cyan-400/35 bg-cyan-500/12 text-cyan-300',
+		consider: 'border-amber-400/35 bg-amber-500/12 text-amber-300',
+		risky: 'border-rose-400/35 bg-rose-500/12 text-rose-300'
+	};
+	const verdictLabelMap = {
+		strong_yes: 'Strong Yes',
+		yes: 'Yes',
+		consider: 'Consider',
+		risky: 'Risky'
+	};
 
 	const normalizeRole = (value) => value?.trim().replace(/\s+/g, ' ').slice(0, 100);
 	const normalizeProjectDescription = (value) => value?.trim().replace(/\s+/g, ' ').slice(0, 1200);
@@ -60,65 +113,365 @@
 		generationPhase = failed ? 'error' : 'complete';
 	};
 
-	const escapePdfText = (value) => String(value || '').replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+	const getSectionClass = (section) => sectionSurfaceClassMap[section?.style?.surface] ?? sectionSurfaceClassMap.panel;
+	const getSectionLayoutClass = (section) =>
+		sectionLayoutClassMap[section?.style?.layout] ?? sectionLayoutClassMap.stack;
+	const getAccentTextClass = (accent) => accentTextClassMap[accent] ?? accentTextClassMap.primary;
+	const getAccentBadgeClass = (accent) => accentBadgeClassMap[accent] ?? accentBadgeClassMap.primary;
+	const getAccentCardClass = (accent) => accentCardClassMap[accent] ?? accentCardClassMap.primary;
+	const getVerdictToneClass = (verdict) =>
+		verdictToneClassMap[verdict?.recommendation] ?? verdictToneClassMap.consider;
+	const getVerdictLabel = (verdict) => verdictLabelMap[verdict?.recommendation] ?? 'Consider';
+	const getConfidenceLabel = (verdict) => {
+		const token = String(verdict?.confidence || '').toLowerCase();
+		if (token === 'high') return 'High confidence';
+		if (token === 'low') return 'Low confidence';
+		return 'Medium confidence';
+	};
+	const getHeroClass = (generatedPage) =>
+		generatedPage?.theme?.hero_style === 'minimal'
+			? 'panel'
+			: 'panel bg-gradient-to-br from-primary/15 via-background to-background';
+	const isExternalHref = (href = '') => /^https?:\/\//i.test(href) || /^mailto:/i.test(href);
+	const closeWarningModal = () => {
+		warningModalOpen = false;
+		warningInfo = { title: '', message: '', detail: '' };
+	};
 
-	const buildPdfBytes = (lines) => {
-		const pageHeight = 842;
-		const startY = 800;
-		const lineHeight = 14;
-		const linesPerPage = 50;
-
-		const pagedLines = [];
-		for (let i = 0; i < lines.length; i += linesPerPage) {
-			pagedLines.push(lines.slice(i, i + linesPerPage));
+	const toAbsoluteLink = (href) => {
+		if (!href || !browser) return '';
+		try {
+			return new URL(href, window.location.origin).toString();
+		} catch {
+			return '';
 		}
-		if (!pagedLines.length) pagedLines.push(['AI Portfolio Report']);
+	};
+
+	const normalizePdfText = (value) =>
+		String(value || '')
+			.replace(/[\r\n\t]+/g, ' ')
+			.replace(/\s+/g, ' ')
+			.replace(/[^\x20-\x7E]/g, '?')
+			.trim();
+
+	const escapePdfText = (value) => normalizePdfText(value).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+	const estimatePdfTextWidth = (text, fontSize) => normalizePdfText(text).length * fontSize * 0.53;
+
+	const wrapPdfText = (text, fontSize, maxWidth) => {
+		const clean = normalizePdfText(text);
+		if (!clean) return [];
+		const words = clean.split(' ');
+		const lines = [];
+		let current = '';
+
+		for (const word of words) {
+			const candidate = current ? `${current} ${word}` : word;
+			if (estimatePdfTextWidth(candidate, fontSize) <= maxWidth) {
+				current = candidate;
+				continue;
+			}
+			if (current) lines.push(current);
+			if (estimatePdfTextWidth(word, fontSize) <= maxWidth) {
+				current = word;
+				continue;
+			}
+			let fragment = '';
+			for (const char of word) {
+				const chunk = `${fragment}${char}`;
+				if (estimatePdfTextWidth(chunk, fontSize) <= maxWidth) {
+					fragment = chunk;
+				} else {
+					if (fragment) lines.push(fragment);
+					fragment = char;
+				}
+			}
+			current = fragment;
+		}
+
+		if (current) lines.push(current);
+		return lines;
+	};
+
+	const collectReportLinks = () => {
+		if (!generated) return [];
+		const merged = [];
+		const seen = new Set();
+		const pushLink = (label, href, description = '') => {
+			const absolute = toAbsoluteLink(href);
+			if (!absolute || seen.has(absolute)) return;
+			seen.add(absolute);
+			merged.push({
+				label: String(label || 'Link').trim().slice(0, 90),
+				href: absolute,
+				description: String(description || '').trim().slice(0, 160)
+			});
+		};
+
+		for (const link of generated.report?.links ?? []) {
+			pushLink(link?.label, link?.href, link?.description);
+		}
+
+		for (const section of generated.sections ?? []) {
+			for (const block of section.blocks ?? []) {
+				if (block.type === 'cards') {
+					for (const item of block.items ?? []) {
+						pushLink(item?.title || section.title, item?.href, item?.meta || item?.text);
+					}
+				}
+				if (block.type === 'links') {
+					for (const item of block.items ?? []) {
+						pushLink(item?.label, item?.href, item?.description);
+					}
+				}
+				if (block.type === 'cta') {
+					pushLink(block.primary_label, block.primary_href, section.title);
+					pushLink(block.secondary_label, block.secondary_href, section.title);
+				}
+			}
+		}
+
+		return merged.slice(0, 20);
+	};
+
+	const buildReportLines = () => {
+		if (!generated) return [];
+
+		const lines = [];
+		const reportTitle = generated.report?.title || 'AI Portfolio Report';
+		const roleLabel = generated.meta?.role || currentRole || roleInput;
+		const modelLabel = `${modelUsed || 'unknown'}${usedFallback ? ' (fallback)' : ''}`;
+		const reportLinks = collectReportLinks();
+
+		lines.push({ text: reportTitle, size: 18, spacerAfter: 8 });
+		lines.push({ text: `Role: ${roleLabel}`, size: 11 });
+		lines.push({ text: `Model: ${modelLabel}`, size: 10, spacerAfter: 8 });
+		if (generated.verdict?.summary) {
+			lines.push({ text: `Verdict: ${generated.verdict.summary}`, size: 10, spacerAfter: 2 });
+			lines.push({
+				text: `Recommendation: ${getVerdictLabel(generated.verdict)} | ${getConfidenceLabel(generated.verdict)}`,
+				size: 10,
+				spacerAfter: 6
+			});
+		}
+		if (generated.verdict?.reasons?.length) {
+			lines.push({ text: 'Verdict reasons', size: 13, spacerBefore: 4, spacerAfter: 3 });
+			for (const reason of generated.verdict.reasons) {
+				lines.push({ text: `- ${reason}`, size: 10 });
+			}
+		}
+		if (generated.verdict?.concerns?.length) {
+			lines.push({ text: 'Verdict concerns', size: 13, spacerBefore: 4, spacerAfter: 3 });
+			for (const concern of generated.verdict.concerns) {
+				lines.push({ text: `- ${concern}`, size: 10 });
+			}
+		}
+		if (generated.report?.intro) {
+			lines.push({ text: generated.report.intro, size: 10, spacerAfter: 8 });
+		}
+
+		if (generated.report?.highlights?.length) {
+			lines.push({ text: 'Highlights', size: 13, spacerBefore: 6, spacerAfter: 4 });
+			for (const highlight of generated.report.highlights) {
+				lines.push({ text: `- ${highlight}`, size: 10 });
+			}
+		}
+
+		for (const section of generated.sections ?? []) {
+			lines.push({ text: section.title, size: 13, spacerBefore: 8, spacerAfter: 3 });
+			if (section.kicker) {
+				lines.push({ text: section.kicker, size: 9, spacerAfter: 2 });
+			}
+			for (const block of section.blocks ?? []) {
+				if (block.type === 'paragraph') {
+					lines.push({ text: block.text, size: 10, spacerAfter: 2 });
+				}
+				if (block.type === 'bullets') {
+					for (const item of block.items ?? []) {
+						lines.push({ text: `- ${item}`, size: 10 });
+					}
+				}
+				if (block.type === 'metrics') {
+					for (const item of block.items ?? []) {
+						const detail = item.detail ? ` (${item.detail})` : '';
+						lines.push({ text: `${item.label}: ${item.value}${detail}`, size: 10 });
+					}
+				}
+				if (block.type === 'cards') {
+					for (const item of block.items ?? []) {
+						if (item.title) lines.push({ text: item.title, size: 11, spacerBefore: 2 });
+						if (item.text) lines.push({ text: item.text, size: 10 });
+						if (item.meta) lines.push({ text: `Evidence: ${item.meta}`, size: 9 });
+						if (item.href) {
+							lines.push({
+								text: `Open link: ${item.href}`,
+								size: 9,
+								link: toAbsoluteLink(item.href)
+							});
+						}
+					}
+				}
+				if (block.type === 'links') {
+					for (const item of block.items ?? []) {
+						lines.push({
+							text: `${item.label}: ${item.href}`,
+							size: 9,
+							link: toAbsoluteLink(item.href)
+						});
+					}
+				}
+				if (block.type === 'qa') {
+					for (const item of block.items ?? []) {
+						lines.push({ text: `Q: ${item.question}`, size: 10, spacerBefore: 1 });
+						lines.push({ text: `A: ${item.answer}`, size: 10 });
+					}
+				}
+				if (block.type === 'cta') {
+					if (block.primary_label && block.primary_href) {
+						lines.push({
+							text: `${block.primary_label}: ${block.primary_href}`,
+							size: 9,
+							link: toAbsoluteLink(block.primary_href)
+						});
+					}
+					if (block.secondary_label && block.secondary_href) {
+						lines.push({
+							text: `${block.secondary_label}: ${block.secondary_href}`,
+							size: 9,
+							link: toAbsoluteLink(block.secondary_href)
+						});
+					}
+				}
+			}
+		}
+
+		if (reportLinks.length) {
+			lines.push({ text: 'Quick Links', size: 13, spacerBefore: 10, spacerAfter: 3 });
+			for (const link of reportLinks) {
+				const suffix = link.description ? ` (${link.description})` : '';
+				lines.push({
+					text: `${link.label}: ${link.href}${suffix}`,
+					size: 9,
+					link: link.href
+				});
+			}
+		}
+
+		return lines;
+	};
+
+	const buildPdfBytes = (lineItems) => {
+		const pageWidth = 595;
+		const pageHeight = 842;
+		const marginX = 48;
+		const marginTop = 56;
+		const marginBottom = 52;
+		const maxTextWidth = pageWidth - marginX * 2;
+		const lineGap = 4;
+
+		const newPage = () => ({ textOps: [], annots: [] });
+		const pages = [newPage()];
+		let currentPage = pages[0];
+		let y = pageHeight - marginTop;
+
+		const ensureSpace = (height) => {
+			if (y - height < marginBottom) {
+				currentPage = newPage();
+				pages.push(currentPage);
+				y = pageHeight - marginTop;
+			}
+		};
+
+		const addTextLine = (text, size = 10, link = '') => {
+			const wrapped = wrapPdfText(text, size, maxTextWidth);
+			for (let index = 0; index < wrapped.length; index += 1) {
+				ensureSpace(size + lineGap);
+				y -= size + lineGap;
+				const line = wrapped[index];
+				currentPage.textOps.push(
+					`BT /F1 ${size} Tf ${marginX.toFixed(2)} ${y.toFixed(2)} Td (${escapePdfText(line)}) Tj ET`
+				);
+
+				if (link && index === 0) {
+					const width = Math.max(36, Math.min(maxTextWidth, estimatePdfTextWidth(line, size)));
+					currentPage.annots.push({
+						x1: marginX,
+						y1: y - 1,
+						x2: marginX + width,
+						y2: y + size + 2,
+						uri: link
+					});
+				}
+			}
+		};
+
+		for (const item of lineItems) {
+			if (item.spacerBefore) {
+				ensureSpace(item.spacerBefore);
+				y -= item.spacerBefore;
+			}
+			addTextLine(item.text, item.size ?? 10, item.link || '');
+			if (item.spacerAfter) {
+				ensureSpace(item.spacerAfter);
+				y -= item.spacerAfter;
+			}
+		}
+
+		if (!pages.some((entry) => entry.textOps.length)) {
+			pages[0].textOps.push('BT /F1 12 Tf 48 780 Td (AI Portfolio Report) Tj ET');
+		}
 
 		const objectMap = new Map();
 		const pageObjectIds = [];
 		let nextObjectId = 4;
 
-		for (const pageLines of pagedLines) {
-			const textOps = ['BT', '/F1 10 Tf', `50 ${startY} Td`];
-			for (let index = 0; index < pageLines.length; index += 1) {
-				const safeLine = escapePdfText(pageLines[index]);
-				if (index !== 0) textOps.push(`0 -${lineHeight} Td`);
-				textOps.push(`(${safeLine}) Tj`);
-			}
-			textOps.push('ET');
-			const stream = textOps.join('\n');
-			const contentObject = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+		for (const pageEntry of pages) {
+			const stream = pageEntry.textOps.join('\n');
 			const contentId = nextObjectId;
 			nextObjectId += 1;
+			objectMap.set(contentId, `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+
+			const annotIds = [];
+			for (const annot of pageEntry.annots) {
+				const annotId = nextObjectId;
+				nextObjectId += 1;
+				annotIds.push(annotId);
+				objectMap.set(
+					annotId,
+					`<< /Type /Annot /Subtype /Link /Rect [${annot.x1.toFixed(2)} ${annot.y1.toFixed(2)} ${annot.x2.toFixed(2)} ${annot.y2.toFixed(2)}] /Border [0 0 0] /A << /S /URI /URI (${escapePdfText(annot.uri)}) >> >>`
+				);
+			}
+
 			const pageId = nextObjectId;
 			nextObjectId += 1;
-			pageObjectIds.push(pageId);
-			objectMap.set(contentId, contentObject);
+			const annots = annotIds.length ? `/Annots [${annotIds.map((id) => `${id} 0 R`).join(' ')}]` : '';
 			objectMap.set(
 				pageId,
-				`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 ${pageHeight}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R >>`
+				`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R ${annots} >>`
 			);
+			pageObjectIds.push(pageId);
 		}
 
-		const pagesKids = pageObjectIds.map((id) => `${id} 0 R`).join(' ');
 		objectMap.set(1, '<< /Type /Catalog /Pages 2 0 R >>');
-		objectMap.set(2, `<< /Type /Pages /Kids [${pagesKids}] /Count ${pageObjectIds.length} >>`);
+		objectMap.set(
+			2,
+			`<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageObjectIds.length} >>`
+		);
 		objectMap.set(3, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
-		const maxId = nextObjectId - 1;
 
+		const maxId = nextObjectId - 1;
 		let output = '%PDF-1.4\n';
 		const xref = [0];
-		for (let i = 1; i <= maxId; i += 1) {
-			const content = objectMap.get(i) || '';
+		for (let id = 1; id <= maxId; id += 1) {
+			const content = objectMap.get(id) || '';
 			xref.push(output.length);
-			output += `${i} 0 obj\n${content}\nendobj\n`;
+			output += `${id} 0 obj\n${content}\nendobj\n`;
 		}
 
 		const xrefStart = output.length;
 		output += `xref\n0 ${maxId + 1}\n`;
 		output += '0000000000 65535 f \n';
-		for (let i = 1; i < xref.length; i += 1) {
-			output += `${String(xref[i]).padStart(10, '0')} 00000 n \n`;
+		for (let id = 1; id < xref.length; id += 1) {
+			output += `${String(xref[id]).padStart(10, '0')} 00000 n \n`;
 		}
 		output += `trailer\n<< /Size ${maxId + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
 
@@ -126,34 +479,14 @@
 	};
 
 	const exportGeneratedPdfReport = () => {
-		if (!generated) return;
-		const lines = [
-			`AI Role Portfolio Report`,
-			`Role: ${currentRole}`,
-			`Model: ${modelUsed || 'unknown'}${usedFallback ? ' (fallback)' : ''}`,
-			'',
-			`Hero: ${generated.hero?.title || ''}`,
-			`${generated.hero?.subtitle || ''}`,
-			`${generated.hero?.summary || ''}`,
-			'',
-			`Fit Verdict: ${generated.fit?.verdict || ''}`,
-			'Top Reasons:'
-		];
-		for (const reason of generated.fit?.top_reasons ?? []) lines.push(`- ${reason}`);
-		lines.push('', 'Risks:');
-		for (const risk of generated.fit?.risks ?? []) lines.push(`- ${risk}`);
-		lines.push('', 'Projects:');
-		for (const project of generated.projects ?? []) {
-			lines.push(
-				`- ${project.title}`,
-				`  Why fit: ${project.why_fit}`,
-				`  Evidence: ${project.evidence}`,
-				`  Focus: ${project.focus}`,
-				`  Outcome: ${project.outcome}`
-			);
-		}
-		const safeRole = currentRole.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+		if (!generated || !browser) return;
+		const lines = buildReportLines();
+		const safeRole = (generated.meta?.role || currentRole || roleInput || 'role')
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-|-$/g, '');
 		const filename = `ai-portfolio-report-${safeRole || 'role'}.pdf`;
+		const linkCount = collectReportLinks().length;
 		let exported = false;
 		try {
 			const bytes = buildPdfBytes(lines);
@@ -170,7 +503,12 @@
 		} catch {
 			exported = false;
 		}
-		trackRecruiterAction('export_ai_portfolio_report', { exported, role: currentRole });
+
+		trackRecruiterAction('export_ai_portfolio_report', {
+			exported,
+			role: generated.meta?.role || currentRole,
+			linkCount
+		});
 	};
 
 	const generatePortfolio = async (role, source = 'manual') => {
@@ -185,6 +523,10 @@
 		roleInput = normalizedRole;
 		generating = true;
 		errorMessage = '';
+		generated = null;
+		modelUsed = '';
+		usedFallback = false;
+		if (warningModalOpen) closeWarningModal();
 		startPhaseTracking();
 		try {
 			const response = await fetch('/api/ai/portfolio-page', {
@@ -196,6 +538,26 @@
 				})
 			});
 			const payload = await response.json();
+
+			if (payload?.warning) {
+				generated = null;
+				errorMessage = '';
+				warningInfo = {
+					title: payload.warning?.title || 'Request warning',
+					message:
+						payload.warning?.message ||
+						'This request does not appear to match the recruiter portfolio context.',
+					detail: payload.warning?.detail || ''
+				};
+				warningModalOpen = true;
+				finishPhaseTracking(true);
+				trackRecruiterAction('ai_portfolio_warning', {
+					role: normalizedRole,
+					source,
+					code: payload.warning?.code || 'unknown'
+				});
+				return;
+			}
 
 			if (!payload?.success || !payload?.generated) {
 				errorMessage = payload?.error || 'Unable to generate AI portfolio.';
@@ -247,7 +609,7 @@
 		<p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Experimental</p>
 		<h1 class="mt-2 text-2xl font-bold md:text-3xl">AI Generated Portfolio</h1>
 		<p class="mt-3 text-sm text-muted-foreground">
-			Enter a role title to generate a recruiter-focused portfolio page tailored to that role.
+			Enter a role title and the AI will decide the section structure, content blocks, and styling tokens for a full recruiter-focused page.
 		</p>
 
 		<form
@@ -269,6 +631,7 @@
 				Generate
 			</Button>
 		</form>
+
 		<details class="mt-3 rounded-md border border-white/10 bg-background/60 p-2">
 			<summary class="cursor-pointer text-sm font-medium">Project description (optional)</summary>
 			<div class="mt-2">
@@ -297,6 +660,7 @@
 				Model: {modelUsed}{usedFallback ? ' (fallback content used)' : ''}
 			</p>
 		{/if}
+
 		{#if generating || generationPhase === 'complete'}
 			<div class="mt-4 rounded-lg border border-white/10 bg-background/70 p-3">
 				<p class="text-xs font-semibold uppercase tracking-[0.1em] text-primary">Generation state</p>
@@ -320,13 +684,38 @@
 		{/if}
 	</div>
 
+	{#if warningModalOpen}
+		<div class="fixed inset-0 z-[85] grid place-items-center bg-black/60 p-4 backdrop-blur-sm">
+			<div
+				class="w-[min(540px,95vw)] rounded-xl border border-amber-400/35 bg-card/95 p-4 shadow-2xl"
+				role="alertdialog"
+				aria-modal="true"
+				aria-live="assertive"
+			>
+				<p class="text-xs font-semibold uppercase tracking-[0.12em] text-amber-300">Context warning</p>
+				<h2 class="mt-2 text-lg font-semibold">{warningInfo.title || 'Request warning'}</h2>
+				<p class="mt-2 text-sm text-muted-foreground">{warningInfo.message}</p>
+				{#if warningInfo.detail}
+					<p class="mt-2 text-xs text-muted-foreground">{warningInfo.detail}</p>
+				{/if}
+				<div class="mt-4 flex justify-end">
+					<Button variant="outline" onclick={closeWarningModal}>Understood</Button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
 	{#if generated}
-		<div class="mt-6 grid gap-4">
+		<div
+			class="mt-6 grid gap-4 {generated.page?.theme?.density === 'compact' ? 'md:gap-3' : 'md:gap-5'}"
+		>
 			<section class="panel">
 				<div class="flex flex-wrap items-center justify-between gap-2">
 					<div>
 						<p class="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Export</p>
-						<p class="text-sm text-muted-foreground">Share this AI-generated recruiter report quickly.</p>
+						<p class="text-sm text-muted-foreground">
+							Download the recruiter report as PDF with project and profile links included.
+						</p>
 					</div>
 					<div class="flex flex-wrap gap-2">
 						<Button variant="outline" onclick={exportGeneratedPdfReport}>Download PDF Report</Button>
@@ -334,110 +723,181 @@
 				</div>
 			</section>
 
-			<section class="panel">
-				<h2 class="text-xl font-semibold">{generated.hero?.title}</h2>
-				<p class="mt-2 text-sm text-primary">{generated.hero?.subtitle}</p>
-				<p class="mt-3 text-sm text-muted-foreground">{generated.hero?.summary}</p>
+			<section class={getHeroClass(generated.page)}>
+				<h2 class="text-xl font-semibold md:text-2xl">{generated.page?.title}</h2>
+				<p class={`mt-2 text-sm ${getAccentTextClass(generated.page?.theme?.accent)}`}>
+					{generated.page?.subtitle}
+				</p>
+				<p class="mt-3 text-sm text-muted-foreground">{generated.page?.summary}</p>
 			</section>
 
 			<section class="panel">
-				<p class="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Role Fit</p>
-				<p class="mt-2 text-sm text-foreground">{generated.fit?.verdict}</p>
-				<div class="mt-3 grid gap-3 md:grid-cols-2">
+				<div class="flex flex-wrap items-start justify-between gap-3">
+					<div>
+						<p class="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Recruiter Verdict</p>
+						<p class="mt-2 text-sm text-foreground">{generated.verdict?.summary}</p>
+					</div>
+					<div
+						class={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] ${getVerdictToneClass(generated.verdict)}`}
+					>
+						{getVerdictLabel(generated.verdict)}
+					</div>
+				</div>
+				<p class="mt-2 text-xs text-muted-foreground">{getConfidenceLabel(generated.verdict)}</p>
+				<div class="mt-4 grid gap-3 md:grid-cols-2">
 					<div>
 						<p class="text-sm font-semibold">Top reasons</p>
-						<ul class="mt-2 space-y-1 text-sm text-muted-foreground">
-							{#each generated.fit?.top_reasons ?? [] as reason}
+						<ul class="mt-2 space-y-1.5 text-sm text-muted-foreground">
+							{#each generated.verdict?.reasons ?? [] as reason, index (`verdict-reason-${index}`)}
 								<li>{reason}</li>
 							{/each}
 						</ul>
 					</div>
 					<div>
-						<p class="text-sm font-semibold">Risks to validate</p>
-						<ul class="mt-2 space-y-1 text-sm text-muted-foreground">
-							{#each generated.fit?.risks ?? [] as risk}
-								<li>{risk}</li>
+						<p class="text-sm font-semibold">Concerns to validate</p>
+						<ul class="mt-2 space-y-1.5 text-sm text-muted-foreground">
+							{#each generated.verdict?.concerns ?? [] as concern, index (`verdict-concern-${index}`)}
+								<li>{concern}</li>
 							{/each}
 						</ul>
 					</div>
 				</div>
 			</section>
 
-			<section class="panel">
-				<p class="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Project Evidence</p>
-				<div class="mt-4 space-y-3">
-					{#each generated.projects ?? [] as project}
-						<article class="item-card">
-							<div class="flex flex-wrap items-center justify-between gap-2">
-								<h3 class="text-base font-semibold">{project.title}</h3>
-								{#if project.slug}
-									<Button href={`/projects/${project.slug}`} variant="outline" size="sm">
-										Open Case Study
-									</Button>
-								{/if}
-							</div>
-							<p class="mt-2 text-sm text-muted-foreground">
-								<span class="font-semibold text-foreground">Why fit:</span> {project.why_fit}
-							</p>
-							<p class="mt-1 text-sm text-muted-foreground">
-								<span class="font-semibold text-foreground">Evidence:</span> {project.evidence}
-							</p>
-							<p class="mt-1 text-sm text-muted-foreground">
-								<span class="font-semibold text-foreground">Focus:</span> {project.focus}
-							</p>
-							<p class="mt-1 text-sm text-muted-foreground">
-								<span class="font-semibold text-foreground">Outcome:</span> {project.outcome}
-							</p>
-						</article>
-					{/each}
-				</div>
-			</section>
-
-			<section class="panel">
-				<p class="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Skills Match</p>
-				<div class="mt-4 grid gap-3 md:grid-cols-2">
-					{#each generated.skills ?? [] as skill}
-						<article class="item-card">
-							<p class="font-semibold">{skill.name}</p>
-							<p class="mt-1 text-sm text-muted-foreground">{skill.relevance}</p>
-							<p class="mt-1 text-xs text-muted-foreground">{skill.proof}</p>
-						</article>
-					{/each}
-				</div>
-			</section>
-
-			<section class="panel">
-				<p class="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Interview Kit</p>
-				<div class="mt-3 grid gap-4 md:grid-cols-2">
-					<div>
-						<p class="text-sm font-semibold">Suggested questions</p>
-						<ol class="mt-2 space-y-1 text-sm text-muted-foreground">
-							{#each generated.interview?.questions ?? [] as question}
-								<li>{question}</li>
-							{/each}
-						</ol>
-					</div>
-					<div class="item-card">
-						<p class="text-xs uppercase tracking-[0.12em] text-muted-foreground">Email draft</p>
-						<p class="mt-2 text-sm">
-							<span class="font-semibold">Subject:</span> {generated.interview?.email_subject}
+			{#each generated.sections ?? [] as section (section.id)}
+				<section class={getSectionClass(section)}>
+					{#if section.kicker}
+						<p
+							class={`text-xs font-semibold uppercase tracking-[0.12em] ${getAccentTextClass(section.style?.accent)}`}
+						>
+							{section.kicker}
 						</p>
-						<p class="mt-2 text-sm text-muted-foreground">{generated.interview?.email_body}</p>
+					{/if}
+					<h3 class="mt-1 text-lg font-semibold md:text-xl">{section.title}</h3>
+
+					<div class="mt-4 space-y-4">
+						{#each section.blocks ?? [] as block, index (`${section.id}-${block.type}-${index}`)}
+							{#if block.type === 'paragraph'}
+								<p class="text-sm text-muted-foreground">{block.text}</p>
+							{/if}
+
+							{#if block.type === 'bullets'}
+								<ul class="space-y-1.5 text-sm text-muted-foreground">
+									{#each block.items ?? [] as item (`${section.id}-${item}`)}
+										<li class="leading-relaxed">{item}</li>
+									{/each}
+								</ul>
+							{/if}
+
+							{#if block.type === 'metrics'}
+								<div class="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+									{#each block.items ?? [] as metric (`${section.id}-${metric.label}`)}
+										<article class={`item-card ${getAccentCardClass(section.style?.accent)}`}>
+											<p class="text-xs uppercase tracking-[0.08em] text-muted-foreground">{metric.label}</p>
+											<p class="mt-1 text-lg font-semibold">{metric.value}</p>
+											{#if metric.detail}
+												<p class="mt-1 text-xs text-muted-foreground">{metric.detail}</p>
+											{/if}
+										</article>
+									{/each}
+								</div>
+							{/if}
+
+							{#if block.type === 'cards'}
+								<div class={getSectionLayoutClass(section)}>
+									{#each block.items ?? [] as item (`${section.id}-${item.title}-${item.href}`)}
+										<article class={`item-card ${getAccentCardClass(section.style?.accent)}`}>
+											<div class="flex flex-wrap items-center justify-between gap-2">
+												<p class="text-base font-semibold">{item.title}</p>
+												{#if item.tag}
+													<span
+														class={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${getAccentBadgeClass(section.style?.accent)}`}
+													>
+														{item.tag}
+													</span>
+												{/if}
+											</div>
+											{#if item.text}
+												<p class="mt-2 text-sm text-muted-foreground">{item.text}</p>
+											{/if}
+											{#if item.meta}
+												<p class="mt-1 text-xs text-muted-foreground">{item.meta}</p>
+											{/if}
+											{#if item.href}
+												<div class="mt-3">
+													<Button
+														variant="outline"
+														size="sm"
+														href={item.href}
+														target={isExternalHref(item.href) ? '_blank' : undefined}
+														rel={isExternalHref(item.href) ? 'noreferrer' : undefined}
+													>
+														Open Link
+													</Button>
+												</div>
+											{/if}
+										</article>
+									{/each}
+								</div>
+							{/if}
+
+							{#if block.type === 'links'}
+								<div class={getSectionLayoutClass(section)}>
+									{#each block.items ?? [] as link (`${section.id}-${link.label}-${link.href}`)}
+										<a
+											href={link.href}
+											target={isExternalHref(link.href) ? '_blank' : undefined}
+											rel={isExternalHref(link.href) ? 'noreferrer' : undefined}
+											class={`item-card block transition-colors hover:bg-muted/70 ${getAccentCardClass(section.style?.accent)}`}
+										>
+											<p class="text-sm font-semibold text-foreground">{link.label}</p>
+											{#if link.description}
+												<p class="mt-1 text-xs text-muted-foreground">{link.description}</p>
+											{/if}
+											<p class="mt-2 break-all text-xs text-primary">{link.href}</p>
+										</a>
+									{/each}
+								</div>
+							{/if}
+
+							{#if block.type === 'qa'}
+								<div class="space-y-3">
+									{#each block.items ?? [] as qa (`${section.id}-${qa.question}`)}
+										<article class={`item-card ${getAccentCardClass(section.style?.accent)}`}>
+											<p class="text-sm font-semibold">Q: {qa.question}</p>
+											<p class="mt-1 text-sm text-muted-foreground">A: {qa.answer}</p>
+										</article>
+									{/each}
+								</div>
+							{/if}
+
+							{#if block.type === 'cta'}
+								<div class="flex flex-wrap gap-2">
+									{#if block.primary_label && block.primary_href}
+										<Button
+											href={block.primary_href}
+											target={isExternalHref(block.primary_href) ? '_blank' : undefined}
+											rel={isExternalHref(block.primary_href) ? 'noreferrer' : undefined}
+										>
+											{block.primary_label}
+										</Button>
+									{/if}
+									{#if block.secondary_label && block.secondary_href}
+										<Button
+											variant="outline"
+											href={block.secondary_href}
+											target={isExternalHref(block.secondary_href) ? '_blank' : undefined}
+											rel={isExternalHref(block.secondary_href) ? 'noreferrer' : undefined}
+										>
+											{block.secondary_label}
+										</Button>
+									{/if}
+								</div>
+							{/if}
+						{/each}
 					</div>
-				</div>
-				<div class="mt-4 flex flex-wrap gap-2">
-					{#if generated.cta?.primary_href}
-						<Button href={generated.cta.primary_href} target="_blank" rel="noreferrer">
-							{generated.cta?.primary_label || 'Primary CTA'}
-						</Button>
-					{/if}
-					{#if generated.cta?.secondary_href}
-						<Button href={generated.cta.secondary_href} variant="outline">
-							{generated.cta?.secondary_label || 'Secondary CTA'}
-						</Button>
-					{/if}
-				</div>
-			</section>
+				</section>
+			{/each}
 		</div>
 	{/if}
 </section>
