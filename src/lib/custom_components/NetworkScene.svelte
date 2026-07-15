@@ -2,11 +2,11 @@
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import * as THREE from 'three';
-	import gsap from 'gsap';
 
 	let { projectCount = 30, skillCount = 20 } = $props();
 
 	let canvas;
+	let gsap;
 	let scene, camera, renderer, raycaster, mouse;
 	let nodes = [];
 	let edges = [];
@@ -230,8 +230,9 @@
 		camera.userData.targetY = followY;
 	}
 
-	onMount(() => {
+	onMount(async () => {
 		if (!browser) return;
+		gsap = (await import('gsap')).default;
 
 		scene = new THREE.Scene();
 		scene.background = new THREE.Color(0x0a0a1a);

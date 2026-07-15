@@ -4,12 +4,12 @@
 	import { Youtube, Github, Palette, Play } from 'lucide-svelte';
 	import { fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
-	import gsap from 'gsap';
 
 	let { data } = $props();
 
 	let animBox = $state(null);
 	let themeAccent = $state('indigo');
+	let gsap;
 
 	const themes = [
 		{ id: 'indigo', label: 'Indigo', class: 'bg-indigo-500' },
@@ -20,8 +20,11 @@
 		{ id: 'violet', label: 'Violet', class: 'bg-violet-500' }
 	];
 
-	const playAnim = (name) => {
+	const playAnim = async (name) => {
 		if (!animBox) return;
+		if (!gsap) {
+			gsap = (await import('gsap')).default;
+		}
 		gsap.killTweensOf(animBox);
 		switch (name) {
 			case 'bounce':
