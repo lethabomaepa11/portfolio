@@ -6,12 +6,18 @@
 	import Services from '$lib/pages/Services.svelte';
 	import Skills from '$lib/pages/Skills.svelte';
 	import Seo from '$lib/custom_components/SEO.svelte';
+	import NetworkScene from '$lib/custom_components/NetworkScene.svelte';
 	import { trackRecruiterAction } from '$lib/recruiter-tools.js';
 	import { portfolioContext } from '$lib/state.svelte';
+	import { getVariant, trackEvent } from '$lib/ab-testing.svelte.js';
 	import { ArrowRight, Download, Github, Linkedin, Mail } from 'lucide-svelte';
 	import { fade } from 'svelte/transition';
 
 	let { data } = $props();
+
+	const variantCta = $state(getVariant('hero_cta'));
+	const variantTagline = $state(getVariant('hero_tagline'));
+	const variantProjects = $state(getVariant('projects_style'));
 
 	const featuredProjects = $derived((data.data.projects ?? []).slice(0, 3));
 	const totalProjects = $derived((data.data.projects ?? []).length);
@@ -61,15 +67,27 @@
 	desc="Software developer currently employed and open to selective full-time opportunities and high-impact collaborations."
 />
 
+<NetworkScene projectCount={totalProjects} skillCount={uniqueTechCount} />
+
 <section class="py-6 md:py-10" in:fade={{ duration: 240 }}>
 	<div class="panel">
 		<div class="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
 			<div class="max-w-3xl">
 				<p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Software Developer</p>
 				<h1 class="mt-3 text-3xl font-bold leading-tight md:text-5xl">Lethabo Maepa</h1>
-				<p class="mt-4 text-base text-muted-foreground md:text-lg">
-					{data.data.info.headline}
-				</p>
+				{#if variantTagline === 'value_prop'}
+					<p class="mt-4 text-base text-muted-foreground md:text-lg">
+						I build products that ship. From concept to deployment.
+					</p>
+				{:else if variantTagline === 'tech_focus'}
+					<p class="mt-4 text-base text-muted-foreground md:text-lg">
+						Full-Stack Developer — SvelteKit, Supabase, Tailwind
+					</p>
+				{:else}
+					<p class="mt-4 text-base text-muted-foreground md:text-lg">
+						{data.data.info.headline}
+					</p>
+				{/if}
 				<p class="mt-2 text-sm text-primary">
 					Currently employed and available for selective projects and strategic collaborations.
 				</p>
@@ -85,20 +103,35 @@
 		</div>
 
 		<div class="mt-6 flex flex-wrap gap-3">
-			<Button href="/projects" onclick={() => trackCta('hero_view_projects')}>View Projects</Button>
-			<Button
-				href={data.data.info.github}
-				target="_blank"
-				rel="noreferrer"
-				variant="outline"
-				onclick={() => trackCta('hero_github_profile')}
-			>
-				<Github size={15} />
-				GitHub Profile
-			</Button>
-			<Button href="/#contact" variant="outline" onclick={() => trackCta('hero_contact')}>
-				Contact Me
-			</Button>
+			{#if variantCta === 'resume_first'}
+				{#if data.data.info.resume}
+					<Button
+						href={data.data.info.resume}
+						target="_blank"
+						onclick={() => { trackCta('hero_resume'); trackEvent('hero_cta', 'resume_first', 'conversion', { action: 'resume' }); }}
+					>
+						<Download size={15} />
+						Download CV
+					</Button>
+				{/if}
+				<Button href="/projects" variant="outline" onclick={() => trackCta('hero_view_projects')}>View Projects</Button>
+				<Button href="/#contact" variant="outline" onclick={() => trackCta('hero_contact')}>Contact Me</Button>
+			{:else}
+				<Button href="/projects" onclick={() => trackCta('hero_view_projects')}>View Projects</Button>
+				<Button
+					href={data.data.info.github}
+					target="_blank"
+					rel="noreferrer"
+					variant="outline"
+					onclick={() => trackCta('hero_github_profile')}
+				>
+					<Github size={15} />
+					GitHub Profile
+				</Button>
+				<Button href="/#contact" variant="outline" onclick={() => trackCta('hero_contact')}>
+					Contact Me
+				</Button>
+			{/if}
 			<Button href="/pricing" variant="outline" onclick={() => trackCta('hero_pricing')}>
 				Pricing
 			</Button>
@@ -187,27 +220,47 @@
 			</Button>
 		</div>
 
-		<div class="mt-5 space-y-3">
-			{#each featuredProjects as project (project.slug)}
-				<a href={`/projects/${project.slug}`} class="item-card block">
-					<p class="text-base font-semibold">{project.title}</p>
-					<p class="mt-1 text-sm text-muted-foreground">{project.description}</p>
-					<div class="mt-3 flex flex-wrap gap-1.5">
-						{#each projectEvidenceTags(project) as tag (tag)}
-							<span
-								class="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-primary"
-							>
-								{tag}
-							</span>
-						{/each}
-					</div>
-					<p class="mt-2 inline-flex items-center gap-1 text-sm text-primary">
-						Read Case Study
-						<ArrowRight size={14} />
-					</p>
-				</a>
-			{/each}
-		</div>
+		{#if variantProjects === 'compact'}
+			<div class="mt-5 space-y-2">
+				{#each featuredProjects as project (project.slug)}
+					<a href={`/projects/${project.slug}`} class="item-card flex items-center justify-between gap-4">
+						<div>
+							<p class="text-sm font-semibold">{project.title}</p>
+							<p class="mt-0.5 text-xs text-muted-foreground">{project.description}</p>
+						</div>
+						<div class="flex shrink-0 flex-wrap gap-1.5">
+							{#each (project.technologies ?? []).slice(0, 3) as tech}
+								<span class="rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+									{tech}
+								</span>
+							{/each}
+						</div>
+					</a>
+				{/each}
+			</div>
+		{:else}
+			<div class="mt-5 space-y-3">
+				{#each featuredProjects as project (project.slug)}
+					<a href={`/projects/${project.slug}`} class="item-card block">
+						<p class="text-base font-semibold">{project.title}</p>
+						<p class="mt-1 text-sm text-muted-foreground">{project.description}</p>
+						<div class="mt-3 flex flex-wrap gap-1.5">
+							{#each projectEvidenceTags(project) as tag (tag)}
+								<span
+									class="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-primary"
+								>
+									{tag}
+								</span>
+							{/each}
+						</div>
+						<p class="mt-2 inline-flex items-center gap-1 text-sm text-primary">
+							Read Case Study
+							<ArrowRight size={14} />
+						</p>
+					</a>
+				{/each}
+			</div>
+		{/if}
 	</div>
 </section>
 

@@ -14,7 +14,7 @@
 		trackRecruiterAction
 	} from '$lib/recruiter-tools.js';
 	import { models, portfolioContext } from '$lib/state.svelte';
-	import { Command, Menu, MousePointer2, NotebookPen, X } from 'lucide-svelte';
+	import { Command, Menu, NotebookPen, X } from 'lucide-svelte';
 	import { ModeWatcher } from 'mode-watcher';
 	import NProgress from 'nprogress';
 	import 'nprogress/nprogress.css';
@@ -42,10 +42,6 @@
 	let activeSection = $state('about');
 	let navFeedbackVisible = $state(false);
 	let navFeedbackTitle = $state('');
-	let showCustomCursor = $state(false);
-	let customCursorX = $state(0);
-	let customCursorY = $state(0);
-	let customCursorMode = $state('default');
 	let timelinePoints = $state([]);
 	let scrollProgress = $state(0);
 	let reloadIntent = false;
@@ -64,7 +60,6 @@
 		{ title: 'Skills', href: '/#skills', key: 'skills' },
 		{ title: 'Experience', href: '/#experience', key: 'experience' },
 		{ title: 'Services', href: '/#services', key: 'services' },
-		{ title: 'Pricing', href: '/#pricing', key: 'pricing' },
 		{ title: 'Contact', href: '/#contact', key: 'contact' }
 	]);
 	const sectionKeys = new Set(links.map((link) => link.key));
@@ -132,24 +127,6 @@
 		const link = links.find((item) => item.key === section);
 		navFeedbackTitle = link?.title ?? section;
 		navFeedbackVisible = true;
-	};
-
-	const resolveCursorMode = (target) => {
-		if (!(target instanceof Element)) return 'default';
-		const editableTarget = target.closest(
-			'input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, [contenteditable="true"], [contenteditable=""], [role="textbox"]'
-		);
-		if (editableTarget) return 'text';
-
-		const interactiveTarget = target.closest(
-			'a, button, summary, select, label, [role="button"], [role="link"], [tabindex]'
-		);
-		if (interactiveTarget) return 'pointer';
-
-		const computedCursor = window.getComputedStyle(target).cursor;
-		if (computedCursor.includes('text')) return 'text';
-		if (computedCursor.includes('pointer')) return 'pointer';
-		return 'default';
 	};
 
 	const scrollToSection = (section) => {
@@ -689,26 +666,6 @@
 			pendingSection = section;
 			scrollToSection(section);
 		};
-		const supportsFinePointer = window.matchMedia('(pointer: fine)').matches;
-		const handleMouseMove = (event) => {
-			customCursorX = event.clientX + 16;
-			customCursorY = event.clientY + 16;
-			customCursorMode = resolveCursorMode(event.target);
-			showCustomCursor = true;
-		};
-		const handleMouseLeave = () => {
-			showCustomCursor = false;
-		};
-		const handleMouseEnter = () => {
-			showCustomCursor = true;
-		};
-		const handleResize = () => {
-			updateIsMobile();
-			if ($page.url.pathname === '/') {
-				updateTimelineMetrics();
-				getActiveSectionFromViewport();
-			}
-		};
 
 		const navigationEntry = performance.getEntriesByType('navigation')?.[0];
 		const isReload = navigationEntry?.type === 'reload';
@@ -732,12 +689,6 @@
 		window.addEventListener('beforeunload', handleBeforeUnload);
 		window.addEventListener('hashchange', handleHashChange);
 		window.addEventListener('scroll', handleScroll, { passive: true });
-		if (supportsFinePointer) {
-			document.documentElement.classList.add('custom-cursor');
-			window.addEventListener('mousemove', handleMouseMove);
-			document.addEventListener('mouseleave', handleMouseLeave);
-			document.addEventListener('mouseenter', handleMouseEnter);
-		}
 		await Promise.all([getModels(), delay(850)]);
 		isLoading = false;
 		showBootOverlay = false;
@@ -798,12 +749,6 @@
 			window.removeEventListener('beforeunload', handleBeforeUnload);
 			window.removeEventListener('hashchange', handleHashChange);
 			window.removeEventListener('scroll', handleScroll);
-			if (supportsFinePointer) {
-				document.documentElement.classList.remove('custom-cursor');
-				window.removeEventListener('mousemove', handleMouseMove);
-				document.removeEventListener('mouseleave', handleMouseLeave);
-				document.removeEventListener('mouseenter', handleMouseEnter);
-			}
 			stopNavFeedback();
 			clearTimeout(commandFeedbackTimer);
 		};
@@ -814,73 +759,87 @@
 <ModeWatcher />
 
 <div class="relative min-h-screen">
-	<header class="sticky top-0 z-40 border-b border-white/10 bg-background shadow-[0_1px_0_rgba(255,255,255,0.04)]">
-		<div class="section-wrap flex h-16 items-center justify-between">
-			<a href="/" class="flex items-center" aria-label="Lethabo Maepa home">
-				<img
-					src="/logo/logo-light.svg"
-					alt="Lethabo Maepa logo"
-					class="h-5 w-auto dark:hidden md:h-6"
-					loading="eager"
-					decoding="async"
-				/>
-				<img
-					src="/logo/logo.svg"
-					alt="Lethabo Maepa logo"
-					class="hidden h-5 w-auto dark:block md:h-6"
-					loading="eager"
-					decoding="async"
-				/>
-			</a>
-
-			<nav class="hidden items-center gap-1 lg:flex">
-				{#each links as item}
-					<a
-						href={item.href}
-						onclick={(event) => handleSectionNavigation(event, item.key)}
-						class="rounded-md px-3 py-2 text-sm transition-colors hover:bg-white/5 hover:text-primary {activeSection === item.key
-							? 'bg-primary/15 text-primary'
-							: 'text-muted-foreground'}"
-					>
-						{item.title}
-					</a>
-				{/each}
-				<a
-					href="/ai-portfolio"
-					onclick={() => trackRecruiterAction('open_ai_generated_portfolio', { source: 'header_link' })}
-					class="rounded-md border border-primary/30 px-3 py-2 text-sm text-primary transition-colors hover:bg-primary/10"
-				>
-					AI Portfolio
+	<header class="sticky top-0 z-40 bg-background/60 backdrop-blur-xl">
+		{#if !$page.url.pathname.startsWith('/editor')}
+			<div class="section-wrap flex h-16 items-center justify-between">
+				<a href="/" class="flex items-center" aria-label="Lethabo Maepa home">
+					<img
+						src="/logo/logo-light.svg"
+						alt="Lethabo Maepa logo"
+						class="h-5 w-auto dark:hidden md:h-6"
+						loading="eager"
+						decoding="async"
+					/>
+					<img
+						src="/logo/logo.svg"
+						alt="Lethabo Maepa logo"
+						class="hidden h-5 w-auto dark:block md:h-6"
+						loading="eager"
+						decoding="async"
+					/>
 				</a>
-			</nav>
 
-			<div class="flex items-center gap-2">
-				<Button
-					variant="outline"
-					size="sm"
-					href="/ai-portfolio"
-					class="hidden md:inline-flex lg:hidden"
-					onclick={() => trackRecruiterAction('open_ai_generated_portfolio', { source: 'header_button' })}
-				>
-					AI Portfolio
-				</Button>
-				<ModeToggle />
-				{#if isMobile}
+				<nav class="hidden items-center gap-1 lg:flex">
+					{#each links as item}
+						<a
+							href={item.href}
+							onclick={(event) => handleSectionNavigation(event, item.key)}
+							class="rounded-md px-3 py-2 text-sm transition-colors hover:bg-white/5 hover:text-primary {activeSection === item.key
+								? 'bg-primary/15 text-primary'
+								: 'text-muted-foreground'}"
+						>
+							{item.title}
+						</a>
+					{/each}
+					<a
+						href="/ai-portfolio"
+						onclick={() => trackRecruiterAction('open_ai_generated_portfolio', { source: 'header_link' })}
+						class="rounded-md border border-primary/30 px-3 py-2 text-sm text-primary transition-colors hover:bg-primary/10"
+					>
+						AI Portfolio
+					</a>
+					<a
+						href="/blog"
+						class="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-primary"
+					>
+						Blog
+					</a>
+					<a
+						href="/playground"
+						class="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-primary"
+					>
+						Playground
+					</a>
+				</nav>
+
+				<div class="flex items-center gap-2">
 					<Button
 						variant="outline"
-						size="icon"
-						aria-label="Toggle Menu"
-						onclick={() => (showMenu = !showMenu)}
+						size="sm"
+						href="/ai-portfolio"
+						class="hidden md:inline-flex lg:hidden"
+						onclick={() => trackRecruiterAction('open_ai_generated_portfolio', { source: 'header_button' })}
 					>
-						{#if showMenu}
-							<X size={18} />
-						{:else}
-							<Menu size={18} />
-						{/if}
+						AI Portfolio
 					</Button>
-				{/if}
+					<ModeToggle />
+					{#if isMobile}
+						<Button
+							variant="outline"
+							size="icon"
+							aria-label="Toggle Menu"
+							onclick={() => (showMenu = !showMenu)}
+						>
+							{#if showMenu}
+								<X size={18} />
+							{:else}
+								<Menu size={18} />
+							{/if}
+						</Button>
+					{/if}
+				</div>
 			</div>
-		</div>
+		{/if}
 	</header>
 
 	{#if isMobile && showMenu}
@@ -906,6 +865,20 @@
 					class="rounded-lg border border-primary/30 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10"
 				>
 					AI Portfolio
+				</a>
+				<a
+					href="/blog"
+					onclick={() => { showMenu = false; }}
+					class="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-white/5 hover:text-primary"
+				>
+					Blog
+				</a>
+				<a
+					href="/playground"
+					onclick={() => { showMenu = false; }}
+					class="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-white/5 hover:text-primary"
+				>
+					Playground
 				</a>
 			</nav>
 		</div>
@@ -1001,10 +974,15 @@
 					<Button onclick={openAiGeneratedPortfolio}>Open AI Portfolio</Button>
 				</div>
 			</div>
-		</div>
-	{/if}
+	</div>
+{/if}
 
-	{#if $page.url.pathname === '/' && !isMobile}
+<main class="section-wrap min-h-[70vh] py-10 md:py-12">
+	{@render children()}
+	<Footer />
+</main>
+
+{#if $page.url.pathname === '/' && !isMobile}
 		<aside class="section-timeline" aria-label="Section timeline">
 			<div class="section-timeline__track">
 				<div class="section-timeline__progress" style={`height: ${scrollProgress}%;`}></div>
@@ -1031,80 +1009,7 @@
 		</aside>
 	{/if}
 
-	{#if showCustomCursor}
-		<div
-			class="pointer-events-none fixed z-[90] -translate-x-1/2 -translate-y-1/2 transition-transform duration-75"
-			style={`left: ${customCursorX}px; top: ${customCursorY}px;`}
-			aria-hidden="true"
-		>
-			{#if customCursorMode === 'text'}
-				<div class="custom-cursor-shell custom-cursor-shell--text">
-					<div class="custom-cursor-ibeam"></div>
-				</div>
-			{:else if customCursorMode === 'pointer'}
-				<div class="custom-cursor-shell custom-cursor-shell--pointer">
-					<MousePointer2 size={14} class="text-primary" />
-				</div>
-			{:else}
-				<div class="custom-cursor-shell custom-cursor-shell--default">
-					<div class="custom-cursor-dot"></div>
-				</div>
-			{/if}
-		</div>
-	{/if}
-
-	<div class="fixed bottom-4 left-4 z-[71]">
-		{#if recruiterNotesOpen}
-			<div class="w-[min(360px,90vw)] rounded-xl border border-white/10 bg-card/95 p-3 shadow-2xl backdrop-blur">
-				<div class="mb-2 flex items-center justify-between">
-					<p class="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Recruiter Notes</p>
-					<button
-						type="button"
-						class="rounded p-1 text-muted-foreground hover:text-foreground"
-						onclick={() => {
-							recruiterNotesOpen = false;
-							trackRecruiterAction('notes_toggle', { open: false, source: 'drawer' });
-						}}
-						aria-label="Close recruiter notes"
-					>
-						<X size={14} />
-					</button>
-				</div>
-				<textarea
-					bind:value={recruiterNotes}
-					rows="8"
-					class="w-full resize-y rounded-md border border-white/10 bg-background p-2 text-sm text-foreground"
-					placeholder="Jot role fit notes, interview questions, and next-step reminders..."
-				></textarea>
-				<div class="mt-2 flex flex-wrap gap-2">
-					<Button size="sm" variant="outline" onclick={() => copyRecruiterNotesShareLink('drawer')}>
-						Copy share link
-					</Button>
-				</div>
-				<p class="mt-2 text-[11px] text-muted-foreground">Saved locally in your browser.</p>
-			</div>
-		{:else}
-			<Button
-				variant="outline"
-				size="sm"
-				onclick={() => {
-					recruiterNotesOpen = true;
-					trackRecruiterAction('notes_toggle', { open: true, source: 'drawer' });
-				}}
-			>
-				<NotebookPen size={14} />
-				Notes
-			</Button>
-		{/if}
-	</div>
-
-	<main class="section-wrap min-h-[70vh] py-10 md:py-12">
-		{@render children()}
-		<Footer />
-	</main>
-</div>
-
-<AiChat {isMobile} />
+	<AiChat {isMobile} />
 
 {#if showExitOverlay || showBootOverlay || isLoading}
 	<div
@@ -1122,3 +1027,4 @@
 		<p class="site-intro-message">{showExitOverlay ? exitMessage : introMessage}</p>
 	</div>
 {/if}
+</div>

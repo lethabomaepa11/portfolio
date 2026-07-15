@@ -1,8 +1,10 @@
 <script>
 	import { browser } from '$app/environment';
+	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import { auth } from '$lib/state.svelte';
+	import { ArrowLeftFromLine, LogOut } from 'lucide-svelte';
 	import { onDestroy, onMount } from 'svelte';
 
 	let { children } = $props();
@@ -56,6 +58,13 @@
 			isLoading = false;
 		}
 	};
+
+	const handleLogout = () => {
+		auth.isAuthenticated = false;
+		localStorage.removeItem('a');
+	};
+
+	const isEditorDetailPage = $derived($page.url.pathname !== '/editor');
 
 	onMount(async () => {
 		const handleResize = () => updateIsMobile();
@@ -113,6 +122,36 @@
 			</form>
 		</div>
 	{:else}
+		<!-- Editor header -->
+		<header class="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
+			<div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+				<a href="/" class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+					<img src="/logo/logo.svg" alt="Lethabo Maepa" class="h-5 w-auto" />
+					<span class="hidden sm:inline">Portfolio</span>
+				</a>
+
+				<div class="flex items-center gap-1">
+					{#if isEditorDetailPage}
+						<a href="/editor" class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+							<ArrowLeftFromLine size={14} />
+							<span class="hidden sm:inline">Dashboard</span>
+						</a>
+					{/if}
+					<a href="/" class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+						View Site
+					</a>
+					<button
+						type="button"
+						onclick={handleLogout}
+						class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-red-500 transition-colors hover:bg-red-500/10"
+					>
+						<LogOut size={14} />
+						<span class="hidden sm:inline">Logout</span>
+					</button>
+				</div>
+			</div>
+		</header>
+
 		<div class="editor-content-shell">
 			{@render children()}
 		</div>

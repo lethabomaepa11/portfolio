@@ -2,20 +2,62 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import TrixDisplay from '$lib/custom_components/TrixDisplay.svelte';
-	import { ArrowLeft } from 'lucide-svelte';
+	import { ArrowLeft, MessageCircle, Send } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 
 	let { data } = $props();
 	let isMobile = $state(false);
 	let viewState = $state('image');
+	let comments = $state([]);
+	let commentsLoading = $state(true);
+	let commentName = $state('');
+	let commentEmail = $state('');
+	let commentBody = $state('');
+	let submitting = $state(false);
 
 	const updateIsMobile = () => {
 		isMobile = new IsMobile().current;
 	};
 
+	const loadComments = async () => {
+		commentsLoading = true;
+		try {
+			const res = await fetch(`/api/projects/${data.project?.slug}/comments`);
+			const d = await res.json();
+			comments = d.comments ?? [];
+		} catch {
+			comments = [];
+		} finally {
+			commentsLoading = false;
+		}
+	};
+
+	const handleComment = async () => {
+		if (!commentName.trim() || !commentBody.trim()) return;
+		submitting = true;
+		try {
+			const res = await fetch(`/api/projects/${data.project?.slug}/comments`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					author_name: commentName.trim(),
+					author_email: commentEmail.trim() || null,
+					body: commentBody.trim()
+				})
+			});
+			if (res.ok) {
+				commentBody = '';
+				await loadComments();
+			}
+		} finally {
+			submitting = false;
+		}
+	};
+
 	onMount(() => {
 		updateIsMobile();
 		window.addEventListener('resize', updateIsMobile);
+		loadComments();
 		return () => window.removeEventListener('resize', updateIsMobile);
 	});
 </script>
@@ -76,6 +118,68 @@
 		<p class="mt-5 text-sm leading-relaxed text-muted-foreground">{data.project?.description}</p>
 		<div class="prose mt-6 max-w-none dark:prose-invert">
 			<TrixDisplay content={data.project?.case_study} />
+		</div>
+
+		<div class="mt-10 border-t border-white/10 pt-6">
+			<h2 class="flex items-center gap-2 text-lg font-semibold">
+				<MessageCircle size={18} />
+				Comments
+			</h2>
+
+			<form
+				onsubmit={(e) => { e.preventDefault(); handleComment(); }}
+				class="mt-4 space-y-3 rounded-xl border border-border bg-background p-4"
+			>
+				<div class="flex gap-3">
+					<input
+						bind:value={commentName}
+						placeholder="Your name"
+						required
+						class="flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary"
+					/>
+					<input
+						bind:value={commentEmail}
+						type="email"
+						placeholder="Email (optional)"
+						class="flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary"
+					/>
+				</div>
+				<textarea
+					bind:value={commentBody}
+					placeholder="Write a comment..."
+					required
+					rows="3"
+					class="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary"
+				></textarea>
+				<Button type="submit" variant="default" size="sm" disabled={submitting}>
+					<Send size={14} />
+					{submitting ? 'Posting...' : 'Post comment'}
+				</Button>
+			</form>
+
+			<div class="mt-5 space-y-3">
+				{#if commentsLoading}
+					<p class="text-sm text-muted-foreground">Loading comments...</p>
+				{:else if comments.length === 0}
+					<p class="text-sm text-muted-foreground">No comments yet. Start the conversation.</p>
+				{:else}
+					{#each comments as comment (comment.id)}
+						<div class="rounded-lg border border-border bg-background/50 p-3">
+							<div class="flex items-center justify-between gap-2">
+								<span class="text-sm font-medium">{comment.author_name}</span>
+								<span class="text-xs text-muted-foreground">
+									{new Date(comment.created_at).toLocaleDateString('en-US', {
+										year: 'numeric',
+										month: 'short',
+										day: 'numeric'
+									})}
+								</span>
+							</div>
+							<p class="mt-1 text-sm leading-relaxed text-muted-foreground">{comment.body}</p>
+						</div>
+					{/each}
+				{/if}
+			</div>
 		</div>
 	</div>
 </section>

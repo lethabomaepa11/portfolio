@@ -101,50 +101,6 @@
 		@apply transition-colors;
 	}
 
-	html.custom-cursor,
-	html.custom-cursor *,
-	html.custom-cursor *::before,
-	html.custom-cursor *::after {
-		cursor: none !important;
-	}
-
-	.custom-cursor-shell {
-		@apply rounded-full border border-primary/35 bg-card/90 shadow-xl backdrop-blur;
-	}
-
-	.custom-cursor-shell--default {
-		@apply grid h-6 w-6 place-items-center;
-	}
-
-	.custom-cursor-shell--pointer {
-		@apply grid h-7 w-7 place-items-center;
-	}
-
-	.custom-cursor-shell--text {
-		@apply grid h-8 w-5 place-items-center rounded-md;
-	}
-
-	.custom-cursor-dot {
-		@apply h-2 w-2 rounded-full bg-primary;
-	}
-
-	.custom-cursor-ibeam {
-		@apply relative h-5 w-[2px] bg-primary;
-	}
-
-	.custom-cursor-ibeam::before,
-	.custom-cursor-ibeam::after {
-		content: '';
-		@apply absolute left-1/2 h-[2px] w-4 -translate-x-1/2 bg-primary;
-	}
-
-	.custom-cursor-ibeam::before {
-		top: -1px;
-	}
-
-	.custom-cursor-ibeam::after {
-		bottom: -1px;
-	}
 }
 
 @layer base {
