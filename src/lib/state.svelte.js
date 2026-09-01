@@ -92,37 +92,49 @@ export const portfolioContext = $state({
 	],
 	info: null,
 	experience: [
-		{
-			title: 'Graduate Software Engineer - Boxfusion',
-			description:
-				'As a graduate software engineer at Boxfusion, I work on a variety of projects, including web development, and backend services. I have gained experience in technologies such as React, Next.js, SQL Server, ASP.NET, ABPZero, Docker and PostgreSQL.',
-			dates: 'Feb 2026 - Present'
-		},
-		{
-			title: 'Tech Innovation Lead - GKSS NWU',
-			description:
-				"Led a society of tech students who participated in hackathons and tech events, and led the development of the society's website.",
-			dates: 'Nov 2024 - Nov 2025'
-		},
-		{
-			title: '2nd Place - Arcademia Global Game Jam',
-			description:
-				'My team placed joint 2nd after we created a 2D platformer game called DragonJourney.',
-			dates: 'May 2025'
-		},
-		{
-			title: '2nd Place - GeeXpo Innovation Hackathon',
-			description:
-				'My team placed 2nd in the GeeXpo Innovation category for an idea focused on improving taxi commuter experiences.',
-			dates: 'Oct 2024'
-		},
-		{
-			title: 'Freelancer - Thuto And Tsebo Trust',
-			description:
-				'I built a website that showcased their services and allowed students to apply for accommodation.',
-			dates: 'Oct 2024'
-		}
-	],
+	{
+		title: 'Graduate Software Engineer - Boxfusion',
+		description:
+			'Work as a primary developer on client-facing enterprise software, collaborating with Business Analysts and stakeholders to analyse business processes and build end-to-end solutions. I have developed workflows, data management features, administrative functionality and APIs using C#, ASP.NET Core, Entity Framework Core, SQL Server, PostgreSQL and Shesha. I have also worked directly with a client onsite in the Western Cape to understand operational processes and translate them into software requirements. Additionally, I developed an AI-assisted development workflow to automate repetitive development tasks and improve development consistency.',
+		dates: 'Feb 2026 - Present'
+	},
+	{
+		title: 'Tech Innovation Lead - GKSS NWU',
+		description:
+			'Led the technology and innovation activities of GKSS at NWU Vaal, organising students around hackathons, technical projects and peer learning. Led the development of the society website and helped establish a student developer community focused on collaboration, code reviews and technical growth.',
+		dates: 'Nov 2024 - Nov 2025'
+	},
+	{
+		title: 'Top 10 - Geekulcha Annual Hackathon 2025',
+		description:
+			'Worked with a team to develop a smart-agriculture solution addressing challenges in agricultural operations. Our solution placed in the Top 10 of the Geekulcha Annual Hackathon.',
+		dates: 'Sept 2025'
+	},
+	{
+		title: 'Participant - G20 Tourism Hackathon',
+		description:
+			'Selected as one of 14 developers to participate in a national tourism-focused hackathon held around the G20 programme, collaborating with developers and industry stakeholders to develop technology-driven solutions for tourism.',
+		dates: 'Sept 2025'
+	},
+	{
+		title: '2nd Place - Arcademia Global Game Jam',
+		description:
+			'Collaborated with a team to design and develop DragonJourney, a 2D platformer game, competing against other teams in a rapid game-development environment. The project placed joint 2nd.',
+		dates: 'May 2025'
+	},
+	{
+		title: '2nd Place - GeeXpo Innovation Hackathon',
+		description:
+			'Worked with a team to develop an innovation concept focused on improving the experience of taxi commuters. The project placed 2nd in the GeeXpo Innovation category.',
+		dates: 'Oct 2024'
+	},
+	{
+		title: 'Freelancer - Thuto And Tsebo Trust',
+		description:
+			'Designed and developed a website for the organisation, showcasing its services and providing an online accommodation application process for students.',
+		dates: 'Oct 2024'
+	}
+],
 	services: [
 		{
 			icon: Code,
